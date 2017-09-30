@@ -14,38 +14,32 @@ def get_params(t):
     if form[-1] not in lib.vows:
         form += '`'
 
-    pos = t.pos
-    nb = t.nb
+    pos = t.ana[0]
 
     # Учёт смешения типов склонения: новый тип - для флексии, старый - для основы
-    if '/' in t.decl:
-        decl = t.decl[:t.decl.index('/')]
-        new_decl = t.decl[t.decl.index('/') + 1:]
+    if '/' in t.ana[1]:
+        decl = t.ana[1][:t.ana[1].index('/')]
+        new_decl = t.ana[1][t.ana[1].index('/') + 1:]
     else:
-        decl = new_decl = t.decl
+        decl = new_decl = t.ana[1]
 
     # Одушевлённость, 'зв/им' и прочий синтаксис в расчёт не берём
-    if '/' in t.case:
-        case = t.case[t.case.index('/') + 1:]
-    else:
-        case = t.case
+    case = t.ana[2][t.ana[2].find('/') + 1:]
 
     # Вообще всегда отдаём предпочтение трактовке 'за чертой'
-    pt = bool(t.num == 'pt')
+    pt = bool(t.ana[3] == 'pt')
     if pt:
         num = 'мн'
-    elif '/' in t.num:
-        num = t.num[t.num.index('/') + 1:]
     else:
-        num = t.num
+        num = t.ana[3][t.ana[3].find('/') + 1:]
 
     # Тут, помимо всего, учёт особого смешения (преим. en/i)
-    if t.gen == '0':
+    if t.ana[4] == '0':
         gen = 'м'
-    elif '/' in t.gen:
-        gen = t.gen[t.gen.index('/') + 1:]
     else:
-        gen = t.gen
+        gen = t.ana[4][t.ana[4].find('/') + 1:]
+
+    nb = t.ana[5]
 
     return form, prop, pos, decl, new_decl, case, num, pt, gen, nb
 

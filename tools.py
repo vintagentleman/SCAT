@@ -1,43 +1,7 @@
 import re
 import lib
 import modif
-
-
-def lat_light(s):
-    s = s.replace('а', 'a')
-    s = s.replace('е', 'e')
-    s = s.replace('о', 'o')
-
-    return s
-
-
-def rus_light(s):
-    s = s.replace('a', 'а')
-    s = s.replace('e', 'е')
-    s = s.replace('o', 'о')
-
-    return s
-
-
-def rus_full(s):
-    s = s.replace('A', 'А')
-    s = s.replace('a', 'а')
-    s = s.replace('B', 'В')
-    s = s.replace('E', 'Е')
-    s = s.replace('e', 'е')
-    s = s.replace('K', 'К')
-    s = s.replace('M', 'М')
-    s = s.replace('H', 'Н')
-    s = s.replace('O', 'О')
-    s = s.replace('o', 'о')
-    s = s.replace('P', 'Р')
-    s = s.replace('C', 'С')
-    s = s.replace('c', 'с')
-    s = s.replace('T', 'Т')
-    s = s.replace('X', 'Х')
-    s = s.replace('x', 'х')
-
-    return s
+import txt_to_xml
 
 
 def remove_punctuation(s, nb):
@@ -63,20 +27,11 @@ def remove_punctuation(s, nb):
     return s
 
 
-def normalise(s, pos):
+def normalise(string, pos):
 
     def simplify_graphics(s):
         # Однозначные графические дублеты
-        s = s.replace('S', 'З')
-        s = s.replace('I', 'И')
-        s = s.replace('W', 'О')
-        s = s.replace('D', 'У')
-        s = s.replace('G', 'У')
-        s = s.replace('U', 'У')
-        s = s.replace('F', 'Ф')
-        s = s.replace('R', 'Я')
-        s = s.replace('L', 'КС')
-        s = s.replace('Q', 'ПС')
+        s = txt_to_xml.replace_chars(s, 'SIWDGUFRLQ', ('З', 'И', 'О', 'У', 'У', 'У', 'Ф', 'Я', 'КС', 'ПС'))
 
         # С ижицей не всё слава богу
         izh = (s.find(c) for c in s if c == 'V')
@@ -96,23 +51,23 @@ def normalise(s, pos):
 
         return s
 
-    prop = bool('*' in s)
+    prop = bool('*' in string)
     if prop:
-        s = s.replace('*', '')
+        string = string.replace('*', '')
 
-    s = s.upper()
-    s = simplify_graphics(s)
-    s = modif.modif(s, pos)
-    s = s.replace('(', '').replace(')', '')
+    string = string.upper()
+    string = simplify_graphics(string)
+    string = modif.modif(string, pos)
+    string = string.replace('(', '').replace(')', '')
 
     if prop:
-        s = '*' + s
+        string = '*' + string
 
     # Если в итоге есть титло - плохо, но что поделать
-    if '#' in s:
-        s = s.replace('#', '')
+    if '#' in string:
+        string = string.replace('#', '')
 
-    return s
+    return string
 
 
 def find_stem(form, gram_comb, fl_dict):

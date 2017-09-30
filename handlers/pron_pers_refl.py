@@ -9,20 +9,11 @@ def get_params(t):
     if form[-1] not in lib.vows:
         form += 'Ъ'
 
-    pers = t.pers
-
-    if '/' in t.case:
-        case = t.case[t.case.index('/') + 1:]
-    else:
-        case = t.case
+    pers = t.ana[2]
+    case = t.ana[3][t.ana[3].find('/') + 1:]
 
     if pers != 'возвр':
-
-        if '/' in t.num:
-            num = t.num[t.num.index('/') + 1:]
-        else:
-            num = t.num
-
+        num = t.ana[4][t.ana[4].find('/') + 1:]
     else:
         num = ''
 

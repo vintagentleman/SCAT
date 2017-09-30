@@ -7,8 +7,7 @@ from handlers.noun import noun_fl
 def get_params(t):
 
     form = t.form
-    pos = t.pos
-    nb = t.nb
+    pos = t.ana[0]
 
     if pos == 'мест':
         zhe = bool(form.endswith('ЖЕ'))
@@ -25,28 +24,22 @@ def get_params(t):
     if form[-1] not in lib.vows:
         form += '`'
 
-    if '/' in t.decl and t.decl != 'р/скл':
-        decl = t.decl[:t.decl.index('/')]
-        new_decl = t.decl[t.decl.index('/') + 1:]
+    if '/' in t.ana[1] and t.ana[1] != 'р/скл':
+        decl = t.ana[1][:t.ana[1].index('/')]
+        new_decl = t.ana[1][t.ana[1].index('/') + 1:]
     else:
-        decl = new_decl = t.decl
+        decl = new_decl = t.ana[1]
 
-    if '/' in t.case:
-        case = t.case[t.case.index('/') + 1:]
-    else:
-        case = t.case
+    case = t.ana[2][t.ana[2].find('/') + 1:]
 
-    if '/' in t.num:
-        num = t.num[t.num.index('/') + 1:]
-    else:
-        num = t.num
+    num = t.ana[3][t.ana[3].find('/') + 1:]
 
-    if t.gen == '0':
+    if t.ana[4] == '0':
         gen = 'м'
-    elif '/' in t.gen:
-        gen = t.gen[t.gen.index('/') + 1:]
     else:
-        gen = t.gen
+        gen = t.ana[4][t.ana[4].find('/') + 1:]
+
+    nb = t.ana[5]
 
     return form, pos, zhe, neg, decl, new_decl, case, num, gen, nb
 
@@ -222,13 +215,13 @@ def main(token):
 
     if stem != 'NONE' and pos == 'мест':
         if zhe:
-            stem += 'ЖЕ'
+            fl += 'ЖЕ'
 
         if neg:
             stem = neg.group() + stem
 
         # Префикс НИ- тут отсечён предлогом
-        if stem in ('КТОЖЕ', 'ЧТОЖЕ'):
+        if stem in ('КТО', 'ЧТО') and zhe:
             stem = 'НИ' + stem
 
     return stem, fl
