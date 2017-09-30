@@ -34,6 +34,7 @@ def parse_line(line):
 
         elif word[-1] == '&' and len(word) > 1:
             line.insert(j + 1, word[-1])
+            line[j] = word[:-1]
 
         if word == 'Z':
             line[j] = '%s %s' % (word, line[j + 1])
@@ -67,6 +68,8 @@ def process(wrds, nums):
             value = sum(get_letter_value(letter) for letter in num) * thousand
 
             yield ('%s\t%d' + '\t' * 5) % (num, value)
+            nums_done += 1
+
         else:
             yield word
 

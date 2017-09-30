@@ -95,6 +95,7 @@ class Token(object):
 
         if self.orig.find(' ') > -1:
             self.orig, self.corr = self.orig.split(' ', maxsplit=1)
+
             if self.corr.endswith(('<lb/>', '<cb/>', '<pb/>')) and len(self.corr) > 5:
                 self.corr = self.corr[:-5]
             self.corr = self.corr.strip()[1:-1]
@@ -197,9 +198,12 @@ class Token(object):
                 self.stem, self.fl = self.get_lemma()
                 self.lemma = self.stem + self.fl
 
+            if self.ana[0].isnumeric():
+                self.reg = self.src
+
     def __repr__(self):
         result = '<w xml:id="%s"' % self.token_id
-        if hasattr(self, 'ana'):
+        if hasattr(self, 'ana') and not self.ana[0].isnumeric():
             # Надо привести грамматику к формату TEI. Но как быть с индексами (плюс-минус)?
             result += ' ana="%s"' % ';'.join(self.ana)
         if hasattr(self, 'lemma'):
@@ -217,7 +221,7 @@ class Token(object):
 
         result += '''</orig>
   <reg>%s</reg>
-  <txt>%s</txt>
+  <src>%s</src>
 </w>''' % (self.reg, self.src.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
 
         # Обрамляем
@@ -370,6 +374,6 @@ def process_file(file, metadata=DefaultMetadata):
 
 if __name__ == '__main__':
     try:
-        process_file('CN_all.txt')
+        process_file('CN.txt')
     except FileNotFoundError:
         print('Error: source file missing.')
