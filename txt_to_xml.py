@@ -48,8 +48,9 @@ def replace_chars(string, fr, to):
 
 
 class Token(object):
-    # В get_reg и get_orig я добавил strip: пробелы перед висячими разрывами создают проблемы
+
     def get_reg(self):
+        # strip() добавил я: пробелы перед висячими разрывами создают проблемы
         self.reg = self.src
         self.reg = self.reg.replace('&', '').replace('\\', '')
         self.reg = re.sub(r'Z -?\d+ ?', '', self.reg)
@@ -96,10 +97,13 @@ class Token(object):
         if self.orig.find(' ') > -1:
             self.orig, self.corr = self.orig.split(' ', maxsplit=1)
 
-            if self.corr.endswith(('<lb/>', '<cb/>', '<pb/>')) and len(self.corr) > 5:
+            # Убрал условие (len(self.corr) > 5): проблемы с висячими разрывами, опять же
+            if self.corr.endswith(('<lb/>', '<cb/>', '<pb/>')):
                 self.corr = self.corr[:-5]
+            # strip() - аналогичная история
             self.corr = self.corr.strip()[1:-1]
 
+        # Но здесь убирать не надо
         if self.orig.endswith(('<lb/>', '<cb/>', '<pb/>')) and len(self.orig) > 5:
             self.orig = self.orig[:-5]
 
@@ -203,9 +207,9 @@ class Token(object):
 
     def __repr__(self):
         result = '<w xml:id="%s"' % self.token_id
+        # Надо привести грамматику к формату TEI. Но как быть с индексами (плюс-минус)?
         if hasattr(self, 'ana') and not self.ana[0].isnumeric():
-            # Надо привести грамматику к формату TEI. Но как быть с индексами (плюс-минус)?
-            result += ' ana="%s"' % ';'.join(self.ana)
+            result += ' ana="%s"' % ';'.join(item for item in self.ana if item)
         if hasattr(self, 'lemma'):
             result += ' lemma="%s"' % self.lemma
         result += '>\n  <orig>'
@@ -244,10 +248,10 @@ class Punct(Token):
 
 class DefaultMetadata:
 
-    prefix = 'CrlNvz'
+    prefix = 'DGlush'
     part = 1
-    page = '25'
-    front = False
+    page = '22'
+    front = True
     col = 1
     line = 1
 
@@ -260,12 +264,14 @@ def process_file(file, metadata=DefaultMetadata):
         else:
             return 'back'
 
+    root = os.getcwd()
     # Исключение может возбуждаться и для папок, и для файла
-    os.chdir(os.getcwd() + '\\txt')
+    os.chdir(root + '\\txt')
     inpt = open(file, mode='r', encoding='utf-8')
 
     # Засим всё в порядке, начинаем обработку
     print('Please wait. Python is processing your data...')
+    os.chdir(root + '\\xml')
     otpt = open(file[:-3] + 'xml', mode='w', encoding='utf-8')
     xmlid = 1
 
@@ -374,6 +380,6 @@ def process_file(file, metadata=DefaultMetadata):
 
 if __name__ == '__main__':
     try:
-        process_file('CN.txt')
+        process_file('DG.txt')
     except FileNotFoundError:
         print('Error: source file missing.')

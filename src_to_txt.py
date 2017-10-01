@@ -74,11 +74,11 @@ def process(wrds, nums):
             yield word
 
 
-def get_txt(file, src_dir):
+def get_txt(file, root_dir):
 
     inpt = open(file, mode='r', encoding='IBM866')
-    os.chdir(src_dir + '\\out')
-    otpt = open('txt_' + file, mode='w', encoding='utf-8')
+    os.chdir(root_dir + '\\txt')
+    otpt = open(file, mode='w', encoding='utf-8')
 
     for i in inpt.readlines():
         i = parse_line(i)
@@ -87,20 +87,20 @@ def get_txt(file, src_dir):
             otpt.write('%s\n' % token)
 
     otpt.close()
-    os.chdir(src_dir)
+    os.chdir(root_dir + '\\src')
     inpt.close()
 
 
 if __name__ == '__main__':
     try:
-        src = os.getcwd() + '\\src'
-        os.chdir(src)
+        root = os.getcwd()
+        os.chdir(root + '\\src')
 
         print('Please wait. Python is processing your data...')
         files = glob.glob('*.txt')
 
         for f in files:
-            get_txt(f, src)
+            get_txt(f, root)
 
     except FileNotFoundError:
         print('Error: source data directory missing.')
