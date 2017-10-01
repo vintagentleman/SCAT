@@ -80,7 +80,7 @@ class Token(object):
         self.orig = self.orig.replace('&', '<lb/>').replace('\\', '<cb/>')
         self.orig = re.sub(r'Z -?\d+ ?', '<pb/>', self.orig)
         self.orig = re.sub(r'\((.+?)\)', overline, self.orig)
-        self.orig = replace_chars(self.orig, 'IRWU+ЭFSGDLQЯ$', 'їѧѡѹѣѣѳѕѫꙋѯѱꙗ҂')
+        self.orig = replace_chars(self.orig, 'IRVWU+ЭFSGDLQЯ$', 'їѧѵѡѹѣѣѳѕѫꙋѯѱꙗ҂')
 
         if '#' in self.orig:
             self.orig = self.orig.replace('#', '')
