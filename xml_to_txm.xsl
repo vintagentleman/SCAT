@@ -6,7 +6,16 @@
       <xsl:apply-templates select="@* | node()"/>
     </xsl:copy>
   </xsl:template>
-  
+
+  <xsl:template match="l">
+    <xsl:apply-templates/>
+    <lb>
+      <xsl:attribute name="n">
+        <xsl:value-of select="@n"/>
+      </xsl:attribute>
+    </lb>
+  </xsl:template>
+
   <xsl:template match="w">
     <w>
       <xsl:for-each select="./@*">
@@ -15,29 +24,22 @@
         </xsl:attribute>
       </xsl:for-each>
 
+      <xsl:attribute name="src">
+        <xsl:value-of select="./src"/>
+      </xsl:attribute>
+      <xsl:attribute name="reg">
+        <xsl:value-of select="./reg"/>
+      </xsl:attribute>
+
       <xsl:choose>
-        <!-- В тег - исправленный вариант, в атрибут - подстроку между угловыми скобками -->
         <xsl:when test="./orig/choice">
-          <xsl:attribute name="reg">
-            <xsl:value-of select="substring-before(substring-after(./reg, '&lt;'), '&gt;')"/>
-          </xsl:attribute>
-          <xsl:copy-of select="./orig/choice/corr/node()"/>
+          <xsl:value-of select="./orig/choice/corr"/>
         </xsl:when>
-        
-        <!-- Стандартный случай с поправкой на правку -->
         <xsl:when test="./orig/sic">
-          <xsl:attribute name="reg">
-            <xsl:value-of select="./reg"/>
-          </xsl:attribute>
-          <xsl:copy-of select="./orig/sic/node()"/>
+          <xsl:value-of select="./orig/sic"/>
         </xsl:when>
-        
-        <!-- Стандартный случай -->
         <xsl:otherwise>
-          <xsl:attribute name="reg">
-            <xsl:value-of select="./reg"/>
-          </xsl:attribute>
-          <xsl:copy-of select="./orig/node()"/>
+          <xsl:value-of select="./orig"/>
         </xsl:otherwise>
       </xsl:choose>
     </w>
