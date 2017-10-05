@@ -7,6 +7,18 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="div3">
+    <div3>
+      <xsl:attribute name="type">
+        <xsl:value-of select="@type"/>
+      </xsl:attribute>
+      <xsl:attribute name="n">
+        <xsl:value-of select="../@n"/>
+      </xsl:attribute>
+      <xsl:apply-templates/>
+    </div3>
+  </xsl:template>
+
   <xsl:template match="l">
     <xsl:apply-templates/>
     <lb>
@@ -33,7 +45,7 @@
 
       <xsl:choose>
         <xsl:when test="./orig/choice">
-          <xsl:value-of select="./orig/choice/corr"/>
+          <xsl:value-of select="./orig/choice/sic"/>
         </xsl:when>
         <xsl:when test="./orig/sic">
           <xsl:value-of select="./orig/sic"/>

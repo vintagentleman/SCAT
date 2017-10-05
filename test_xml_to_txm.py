@@ -59,7 +59,7 @@ class TestTransform(unittest.TestCase):
 <text>
   <div1 type="part" n="1">
     <div2 type="page" n="1">
-      <div3 type="front">
+      <div3 type="front" n="1">
         <div4 type="col" n="1">
           
 <num value="11">
@@ -100,7 +100,7 @@ class TestTransform(unittest.TestCase):
   <src>~СМИРЕМU&amp;ДРIЕ &lt;СМИРЕНОМU&amp;ДРIЕ&gt;</src>
 </w>''')
         self.assertEqual(str(self.transform(token)), '''<?xml version="1.0"?>
-<w xml:id="Test.6" src="~СМИРЕМU&amp;ДРIЕ &lt;СМИРЕНОМU&amp;ДРIЕ&gt;" reg="~СМИРЕМУДРИЕ &lt;СМИРЕНОМУДРИЕ&gt;">смиреномѹдрїе</w>
+<w xml:id="Test.6" src="~СМИРЕМU&amp;ДРIЕ &lt;СМИРЕНОМU&amp;ДРIЕ&gt;" reg="~СМИРЕМУДРИЕ &lt;СМИРЕНОМУДРИЕ&gt;">смиремѹдрїе</w>
 ''')
 
     def test_sic(self):
@@ -112,6 +112,7 @@ class TestTransform(unittest.TestCase):
         self.assertEqual(str(self.transform(token)), '''<?xml version="1.0"?>
 <w xml:id="Test.7" src="~БЛ(с)ВЕ&amp;" reg="~БЛ(с)ВЕ">бл҇ⷭве</w>
 ''')
+
 
 if __name__ == '__main__':
     unittest.main()

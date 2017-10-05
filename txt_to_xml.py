@@ -345,7 +345,9 @@ def process_file(file, metadata=DefaultMetadata):
                 metadata.line = 1
                 metadata.front = token.next_page_is_front
                 metadata.page = token.next_page_num
-                otpt.write('''            </l>
+
+                if metadata.front:
+                    otpt.write('''            </l>
           </div4>
         </div3>
       </div2>
@@ -353,6 +355,14 @@ def process_file(file, metadata=DefaultMetadata):
         <div3 type="%s">
           <div4 type="col" n="%d">
             <l n="%d">\n''' % (metadata.page, front_text(metadata.front), metadata.col, metadata.line))
+
+                else:
+                    otpt.write('''            </l>
+          </div4>
+        </div3>
+        <div3 type="%s">
+          <div4 type="col" n="%d">
+            <l n="%d">\n''' % (front_text(metadata.front), metadata.col, metadata.line))
 
             elif token.col_b:
                 metadata.col += 1
@@ -380,6 +390,6 @@ def process_file(file, metadata=DefaultMetadata):
 
 if __name__ == '__main__':
     try:
-        process_file('DG.txt')
+        process_file('DGlush.txt')
     except FileNotFoundError:
         print('Error: source file missing.')
