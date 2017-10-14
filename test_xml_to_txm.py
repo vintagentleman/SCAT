@@ -16,7 +16,7 @@ class TestTransform(unittest.TestCase):
   <src>М(с)ЦА</src>
 </w>''')
         self.assertEqual(str(self.transform(token)), '''<?xml version="1.0"?>
-<w xml:id="Test.1" src="М(с)ЦА" reg="М(с)ЦА">м҇ⷭца</w>
+<w xml:id="Test.1" reg="М(с)ЦА" src="М(с)ЦА">м҇ⷭца</w>
 ''')
 
     def test_punct(self):
@@ -32,7 +32,7 @@ class TestTransform(unittest.TestCase):
   <src>FЕВРАЛR</src>
 </w>''')
         self.assertEqual(str(self.transform(token)), '''<?xml version="1.0"?>
-<w xml:id="Test.2" ana="сущ;jo;род;ед;м" lemma="ФЕВРАЛЬ" src="FЕВРАЛR" reg="ФЕВРАЛЯ">ѳевралѧ</w>
+<w xml:id="Test.2" ana="сущ;jo;род;ед;м" lemma="ФЕВРАЛЬ" reg="ФЕВРАЛЯ" src="FЕВРАЛR">ѳевралѧ</w>
 ''')
 
     def test_tree_1(self):
@@ -63,7 +63,7 @@ class TestTransform(unittest.TestCase):
         <div4 type="col" n="1">
           
 <num value="11">
-<w xml:id="Test.3" src="АI#" reg="АI#">аї҃</w>
+<w xml:id="Test.3" reg="АI#" src="АI#">аї҃</w>
 </num>
           <lb n="1"/>
         </div4>
@@ -80,7 +80,7 @@ class TestTransform(unittest.TestCase):
   <src>ИСПО&amp;ЛНЬ</src>
 </w>''')
         self.assertEqual(str(self.transform(token)), '''<?xml version="1.0"?>
-<w xml:id="Test.4" src="ИСПО&amp;ЛНЬ" reg="ИСПОЛНЬ">исполнь</w>
+<w xml:id="Test.4" reg="ИСПОЛНЬ" src="ИСПО&amp;ЛНЬ">исполнь</w>
 ''')
 
     def test_tree_3(self):
@@ -90,7 +90,7 @@ class TestTransform(unittest.TestCase):
   <src>ПРАВИZ 59 ТЕЛЬ</src>
 </w>''')
         self.assertEqual(str(self.transform(token)), '''<?xml version="1.0"?>
-<w xml:id="Test.5" src="ПРАВИZ 59 ТЕЛЬ" reg="ПРАВИТЕЛЬ">правитель</w>
+<w xml:id="Test.5" reg="ПРАВИТЕЛЬ" src="ПРАВИZ 59 ТЕЛЬ">правитель</w>
 ''')
 
     def test_choice(self):
@@ -100,7 +100,7 @@ class TestTransform(unittest.TestCase):
   <src>~СМИРЕМU&amp;ДРIЕ &lt;СМИРЕНОМU&amp;ДРIЕ&gt;</src>
 </w>''')
         self.assertEqual(str(self.transform(token)), '''<?xml version="1.0"?>
-<w xml:id="Test.6" src="~СМИРЕМU&amp;ДРIЕ &lt;СМИРЕНОМU&amp;ДРIЕ&gt;" reg="~СМИРЕМУДРИЕ &lt;СМИРЕНОМУДРИЕ&gt;">смиремѹдрїе</w>
+<w xml:id="Test.6" reg="~СМИРЕМУДРИЕ &lt;СМИРЕНОМУДРИЕ&gt;" src="~СМИРЕМU&amp;ДРIЕ &lt;СМИРЕНОМU&amp;ДРIЕ&gt;">смиремѹдрїе</w>
 ''')
 
     def test_sic(self):
@@ -110,7 +110,7 @@ class TestTransform(unittest.TestCase):
   <src>~БЛ(с)ВЕ&amp;</src>
 </w>''')
         self.assertEqual(str(self.transform(token)), '''<?xml version="1.0"?>
-<w xml:id="Test.7" src="~БЛ(с)ВЕ&amp;" reg="~БЛ(с)ВЕ">бл҇ⷭве</w>
+<w xml:id="Test.7" reg="~БЛ(с)ВЕ" src="~БЛ(с)ВЕ&amp;">бл҇ⷭве</w>
 ''')
 
 

@@ -8,7 +8,7 @@
   </xsl:template>
 
   <xsl:template match="div3">
-    <div3>
+    <xsl:copy>
       <xsl:attribute name="type">
         <xsl:value-of select="@type"/>
       </xsl:attribute>
@@ -16,7 +16,7 @@
         <xsl:value-of select="../@n"/>
       </xsl:attribute>
       <xsl:apply-templates/>
-    </div3>
+    </xsl:copy>
   </xsl:template>
 
   <xsl:template match="l">
@@ -29,18 +29,18 @@
   </xsl:template>
 
   <xsl:template match="w">
-    <w>
+    <xsl:copy>
       <xsl:for-each select="./@*">
         <xsl:attribute name="{name()}">
           <xsl:value-of select="."/>
         </xsl:attribute>
       </xsl:for-each>
 
-      <xsl:attribute name="src">
-        <xsl:value-of select="./src"/>
-      </xsl:attribute>
       <xsl:attribute name="reg">
         <xsl:value-of select="./reg"/>
+      </xsl:attribute>
+      <xsl:attribute name="src">
+        <xsl:value-of select="./src"/>
       </xsl:attribute>
 
       <xsl:choose>
@@ -54,6 +54,6 @@
           <xsl:value-of select="./orig"/>
         </xsl:otherwise>
       </xsl:choose>
-    </w>
+    </xsl:copy>
   </xsl:template>
 </xsl:stylesheet>

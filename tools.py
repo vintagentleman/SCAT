@@ -4,29 +4,6 @@ import modif
 import txt_to_xml
 
 
-def remove_punctuation(s, nb):
-    # Учёт исправлений (обработка производится над исправленным вариантом)
-    if '<' in s:
-        s = s[s.index('<') + 1:s.index('>')]
-
-    # 'Безумные' (неэтимологические) еры и ери на концах строки, можем удалять их без разметки
-    # Не трогаем, если 1) они оканчивают словоформу либо 2) входят в состав префиков типа ВЪ- и СЪ-
-    if not ('+ъ' in nb or '+ь' in nb):
-        for yer in ('Ъ&', 'ЪZ', 'Ь&', 'ЬZ'):
-            if yer in s and not (s.endswith(yer) or s[1:].startswith(yer)):
-                    s = s.replace(yer, '')
-
-    # Знаки препинания
-    for sign in '&Z.,:;[]- ':
-        s = s.replace(sign, '')
-
-    # Номера страниц
-    for i in range(10):
-        s = s.replace(str(i), '')
-
-    return s
-
-
 def normalise(string, pos):
 
     def simplify_graphics(s):
@@ -51,9 +28,12 @@ def normalise(string, pos):
 
         return s
 
-    prop = bool('*' in string)
+    prop = bool(string.startswith('*'))
     if prop:
-        string = string.replace('*', '')
+        string = string[1:]
+    sic = bool(string.startswith('*'))
+    if sic:
+        string = string[1:]
 
     string = string.upper()
     string = simplify_graphics(string)
@@ -62,10 +42,8 @@ def normalise(string, pos):
 
     if prop:
         string = '*' + string
-
-    # Если в итоге есть титло - плохо, но что поделать
-    if '#' in string:
-        string = string.replace('#', '')
+    if sic:
+        string = '~' + string
 
     return string
 

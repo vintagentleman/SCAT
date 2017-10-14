@@ -136,6 +136,7 @@ class Token(object):
         self.form = remove_punctuation(self.src, self.ana[5])
 
         # Тут особая история с порядковыми прилагательными типа '$ЗПF#ГО'
+        # Неразмеченные, впрочем, всё равно остаются за бортом - делать нечего
         if self.ana[0] == 'числ/п' and '#' in self.form:
             # 'Упрощённое упрощение'
             return self.form.upper().replace('(', '').replace(')', '')
@@ -194,6 +195,7 @@ class Token(object):
 
         if ana:
             self.ana = ana
+            # Раскладку путают чрезвычайно часто
             self.ana[1] = replace_chars(ana[1], 'аео', 'aeo')
             self.ana[5] = replace_chars(ana[5], 'aeo', 'аео')
             self.form = self.get_form()
@@ -287,7 +289,7 @@ def process_file(file, metadata=DefaultMetadata):
         items = [item.strip() for item in line.split(sep='\t')]
 
         # Если при словоформе есть висячие знаки препинания, сохраняем их отдельно и убираем
-        punct_index = [items[0].find(c) for c in '.,:;?!' if items[0].find(c) != -1]
+        punct_index = sorted([items[0].find(c) for c in '.,:;?!' if items[0].find(c) != -1])
         if punct_index:
             punct = items[0][punct_index[0]:]
             items[0] = items[0][:punct_index[0]]
