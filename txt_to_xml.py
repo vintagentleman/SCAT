@@ -273,6 +273,8 @@ def process_file(file, metadata=DefaultMetadata):
 
     # Засим всё в порядке, начинаем обработку
     print('Please wait. Python is processing your data...')
+
+    os.makedirs(root + '\\xml', exist_ok=True)
     os.chdir(root + '\\xml')
     otpt = open(file[:-3] + 'xml', mode='w', encoding='utf-8')
     xmlid = 1

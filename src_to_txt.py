@@ -22,26 +22,25 @@ def parse_line(line):
 
     j = 0
     while j < len(line):
-        word = line[j]
 
         if len(line) > j + 1 and line[j + 1][0] == '<':
-            line[j] = '%s %s' % (word, line[j + 1])
+            line[j] = '%s %s' % (line[j], line[j + 1])
             del line[j + 1]
 
-        if find_any_char(word, '.,:;?!') > 0:
-            line.insert(j + 1, word[find_any_char(word, '.,:;?!'):])
-            line[j] = word[:find_any_char(word, '.,:;?!')]
+        if find_any_char(line[j], '.,:;?!') > 0:
+            line.insert(j + 1, line[j][find_any_char(line[j], '.,:;?!'):])
+            line[j] = line[j][:find_any_char(line[j], '.,:;?!')]
 
-        elif word[-1] == '&' and len(word) > 1:
-            line.insert(j + 1, word[-1])
-            line[j] = word[:-1]
+        elif line[j][-1] == '&' and len(line[j]) > 1:
+            line.insert(j + 1, line[j][-1])
+            line[j] = line[j][:-1]
 
-        if word == 'Z':
-            line[j] = '%s %s' % (word, line[j + 1])
+        if line[j] == 'Z':
+            line[j] = '%s %s' % (line[j], line[j + 1])
             del line[j + 1]
 
-        elif word[-1] == 'Z':
-            line[j] = '%s %s %s' % (word, line[j + 1], line[j + 2])
+        elif line[j][-1] == 'Z':
+            line[j] = '%s %s %s' % (line[j], line[j + 1], line[j + 2])
             del line[j + 1:j + 3]
             j -= 1
 
@@ -57,7 +56,7 @@ def process(wrds, nums):
         return (0, 0, 1, 2, 3, 4, 5, 6, 7, 8,
                 10, 20, 30, 40, 50, 70, 80, 100,
                 200, 300, 400, 400, 500, 600, 800,
-                900, 90, 900, 60, 700, 9, 400)['#$АВГДЕSЗНIКЛМНОПРСТUDФХWЦЧRLQF'.find(letter)]
+                900, 90, 900, 60, 700, 9, 400)['#$АВГДЕSЗНIКЛМНОПРСТUDФХWЦЧRLQFV'.find(letter)]
 
     nums_done = 0
 
@@ -77,6 +76,7 @@ def process(wrds, nums):
 def get_txt(file, root_dir):
 
     inpt = open(file, mode='r', encoding='IBM866')
+    os.makedirs(root_dir + '\\txt', exist_ok=True)
     os.chdir(root_dir + '\\txt')
     otpt = open(file, mode='w', encoding='utf-8')
 

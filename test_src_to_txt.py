@@ -17,6 +17,10 @@ class TestParsing(unittest.TestCase):
         self.assertEqual(result, (['И', 'СЛЫША', 'МАZ -26 НIЕМЪ', 'ЯКW', 'ГЛА(с)', 'ЗВОНRЩЬ',
                                    'В', 'ТОИ', 'ПGСТЫНI', '&', 'НА', 'РЕЦ+', '*ГЛGШИЦ+', '.'], []))
 
+        result = src_to_txt.parse_line('И& Б+ ВИД+TИ ~РАZ 449 ЗD(М)МО(М) <РАZ 449 ЗDМО(М)> БЛЖННА(г)#&/')
+
+        self.assertEqual(result, (['И', '&', 'Б+', 'ВИД+ТИ', '~РАZ 449 ЗD(М)МО(М) <РАZ 449 ЗDМО(М)>', 'БЛЖННА(г)#', '&'], []))
+
 
 class TestNumbering(unittest.TestCase):
 
