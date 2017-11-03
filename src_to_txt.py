@@ -1,20 +1,11 @@
 import os
+import re
 import glob
 import txt_to_xml
+from lib import letter_values
 
 
 def parse_line(line):
-
-    def find_any_char(s, c_str):
-        k = 0
-
-        while k < len(s):
-            if s[k] in c_str:
-                return k
-            k += 1
-
-        return -1
-
     line = txt_to_xml.replace_chars(line, 'ABEKMHOPCTXaeopcyx', 'АВЕКМНОРСТХаеорсух')
 
     nums = line[line.rfind('/') + 1:].split()
@@ -24,12 +15,19 @@ def parse_line(line):
     while j < len(line):
 
         if len(line) > j + 1 and line[j + 1][0] == '<':
-            line[j] = '%s %s' % (line[j], line[j + 1])
+            corr = line[j + 1]
             del line[j + 1]
 
-        if find_any_char(line[j], '.,:;?!') > 0:
-            line.insert(j + 1, line[j][find_any_char(line[j], '.,:;?!'):])
-            line[j] = line[j][:find_any_char(line[j], '.,:;?!')]
+            while '>' not in corr:
+                corr += ' ' + line[j + 1]
+                del line[j + 1]
+
+            line[j] = '%s %s' % (line[j], corr)
+
+        punct = re.search('[.,:;?!]', line[j])
+        if punct and punct.start() > 0:
+            line.insert(j + 1, line[j][punct.start():])
+            line[j] = line[j][:punct.start()]
 
         elif line[j][-1] == '&' and len(line[j]) > 1:
             line.insert(j + 1, line[j][-1])
@@ -50,21 +48,17 @@ def parse_line(line):
 
 
 def process(wrds, nums):
-
-    def get_letter_value(letter):
-
-        return (0, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-                10, 20, 30, 40, 50, 70, 80, 100,
-                200, 300, 400, 400, 500, 600, 800,
-                900, 90, 900, 60, 700, 9, 400)['#$АВГДЕSЗНIКЛМНОПРСТUDФХWЦЧRLQFV'.find(letter)]
-
     nums_done = 0
 
     for word in wrds:
         if word == '*':
             num = nums[nums_done]
-            thousand = int(num[0] == '$') * 999 + 1
-            value = sum(get_letter_value(letter) for letter in num) * thousand
+            titlo = num.index('#')
+
+            if num[0] == '$':
+                value = letter_values[num[1]] * 1000 + sum(letter_values.get(letter, 0) for letter in num[2:titlo])
+            else:
+                value = sum(letter_values.get(letter, 0) for letter in num[0:titlo])
 
             yield ('%s\t%d' + '\t' * 5) % (num, value)
             nums_done += 1
