@@ -17,14 +17,13 @@ if __name__ == '__main__':
         for file in files:
 
             f = open(file, mode='r', encoding='utf-8')
-            name = file.replace('.txt', '')
 
             for i, line in enumerate(f):
                 # Непечатные символы где-нибудь да проскакивают - надо избавляться
                 items = [item.strip() for item in line.rstrip('\n').split(sep='\t')]
 
                 if len(items) == 7:
-                    t = Token(items[0], name, [items[i] for i in range(1, 7)])
+                    t = Token(items[0], file[:-4], [items[i] for i in range(1, 7)])
                 else:
                     print('Warning: corrupt data in file %s, line %d.' % (file, i + 1))
                     continue

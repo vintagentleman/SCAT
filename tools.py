@@ -31,7 +31,7 @@ def normalise(string, pos):
     prop = bool(string.startswith('*'))
     if prop:
         string = string[1:]
-    sic = bool(string.startswith('*'))
+    sic = bool(string.startswith('~'))
     if sic:
         string = string[1:]
 
@@ -44,6 +44,10 @@ def normalise(string, pos):
         string = '*' + string
     if sic:
         string = '~' + string
+
+    # Если титло остаётся - плохо, но что поделать
+    if '#' in string:
+        string = string.replace('#', '')
 
     return string
 

@@ -151,10 +151,13 @@ class Token(object):
                 return noun.main(self)
             elif self.ana[0] in ('прил', 'прил/ср', 'числ/п'):
                 return adj.main(self)
-            elif self.ana[0] == 'прил/н':
-                return self.form, ''
-            else:
+            elif self.ana[0] == 'числ':
                 return num_pron_imp.main(self)
+            elif self.ana[0] in ('гл', 'гл/в', 'прич', 'прич/в'):
+                pass
+            # 'прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'
+            else:
+                return self.form, ''
 
         else:
 
@@ -200,7 +203,7 @@ class Token(object):
             self.ana[5] = replace_chars(ana[5], 'aeo', 'аео')
             self.form = self.get_form()
 
-            if self.ana[0].startswith(('сущ', 'прил', 'числ', 'мест')):
+            if not self.ana[0].startswith(('гл', 'прич')):
                 self.stem, self.fl = self.get_lemma()
                 self.lemma = self.stem + self.fl
 
