@@ -198,16 +198,18 @@ class Token(object):
 
         if ana:
             self.ana = ana
-            # Раскладку путают чрезвычайно часто
-            self.ana[1] = replace_chars(ana[1], 'аео', 'aeo')
-            self.ana[5] = replace_chars(ana[5], 'aeo', 'аео')
-            self.form = self.get_form()
 
-            if not self.ana[0].startswith(('гл', 'прич')):
-                self.stem, self.fl = self.get_lemma()
-                self.lemma = self.stem + self.fl
+            if not self.ana[0].isnumeric():
+                # Раскладку путают чрезвычайно часто
+                self.ana[1] = replace_chars(ana[1], 'аео', 'aeo')
+                self.ana[5] = replace_chars(ana[5], 'aeo', 'аео')
+                self.form = self.get_form()
 
-            if self.ana[0].isnumeric():
+                if not self.ana[0].startswith(('гл', 'прич')):
+                    self.stem, self.fl = self.get_lemma()
+                    self.lemma = self.stem + self.fl
+
+            else:
                 self.reg = self.src
 
     def __repr__(self):

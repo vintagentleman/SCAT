@@ -25,7 +25,7 @@ def real_length(wort):
 # Замена буквосочетания
 def repl(wort, d):
 
-    for coll in d.keys():
+    for coll in d:
         if wort.find(coll) != -1:
             wort = wort.replace(coll, d[coll])
 
@@ -37,13 +37,13 @@ def modif(wort, pos):
     wort_init = wort
 
     if tit_check(wort) == 1:
-        for coll in modif_lib.titlo_on_st.keys():
+        for coll in modif_lib.titlo_on_st:
             if wort.find(coll) == 0:
                 # Замена буквосочетаний под титлом (только в начале слов)
                 wort = wort.replace(coll, modif_lib.titlo_on_st[coll], 1)
 
         # Cлучаи с двойственной трактовкой
-        for coll in modif_lib.titlo_on_st_ambig.keys():
+        for coll in modif_lib.titlo_on_st_ambig:
             if wort.find(coll[0]) == 0 and coll[1] == pos:
                 wort = wort.replace(coll[0], modif_lib.titlo_on_st_ambig[coll])
 
@@ -57,7 +57,7 @@ def modif(wort, pos):
     # Замена буквосочетаний в сокращённых корнях без титла
     if tit_check(wort) == 0:
         # Cлучаи с двойственной трактовкой (надстроки случаев с однозначной)
-        for coll in modif_lib.abbr_ambig_long.keys():
+        for coll in modif_lib.abbr_ambig_long:
             if wort.find(coll[0]) != -1 and coll[1] == pos:
                 wort = wort.replace(coll[0], modif_lib.abbr_ambig_long[coll])
 
@@ -65,7 +65,7 @@ def modif(wort, pos):
         wort = repl(wort, modif_lib.abbr)
 
         # Cлучаи с двойственной трактовкой (подстроки случаев с однозначной)
-        for coll in modif_lib.abbr_ambig_short.keys():
+        for coll in modif_lib.abbr_ambig_short:
             if wort.find(coll[0]) != -1 and coll[1] == pos:
                 wort = wort.replace(coll[0], modif_lib.abbr_ambig_short[coll])
 

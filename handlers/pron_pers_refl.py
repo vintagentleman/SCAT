@@ -26,12 +26,12 @@ def main(token):
     stem = 'NONE'
 
     if pers != 'возвр':
-        for key in lib.pron_pers.keys():
+        for key in lib.pron_pers:
             if re.match(key[0], form) and (pers, case, num) == key[1]:
                 stem = lib.pron_pers[key]
                 break
     else:
-        for key in lib.pron_refl.keys():
+        for key in lib.pron_refl:
             if re.match(key[0], form) and case == key[1]:
                 stem = lib.pron_refl[key]
                 break

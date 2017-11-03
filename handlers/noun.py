@@ -174,7 +174,7 @@ def main(token):
     fl = ''
 
     # Проверка на исключительность
-    for key in lib.noun_spec.keys():
+    for key in lib.noun_spec:
         if re.match(key, form):
             stem, fl = lib.noun_spec[key], ''
             break

@@ -132,13 +132,13 @@ def main(token):
             stem = 'КОЖДО'
 
         # Проверка на вопросительность
-        for key in lib.pron_interr.keys():
+        for key in lib.pron_interr:
             if re.match(key[0], form) and (decl, case) == key[1]:
                 stem = lib.pron_interr[key]
                 break
     else:
         # Проверка на изменяемость обеих частей
-        for key in lib.num_spec.keys():
+        for key in lib.num_spec:
             if re.match(key, form):
                 stem = lib.num_spec[key]
                 break

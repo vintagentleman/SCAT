@@ -56,7 +56,7 @@ def find_stem(form, gram_comb, fl_dict):
     stem = 'NONE'
 
     # Проверка на корректность сочетания граммем
-    if gram_comb in fl_dict.keys():
+    if gram_comb in fl_dict:
 
         # Поиск флексии и стемминг
         infl = re.search('(%s|`)$' % fl_dict[gram_comb], form)
