@@ -255,6 +255,10 @@ class TestLemma(unittest.TestCase):
         token = txt_to_xml.Token('*ИИ#', 'Test.II', ['сущ', 'o', 'род', 'ед', 'м', ''])
         self.assertEqual(token.lemma, '*ИИСУСЪ')
 
+    def test_regex(self):
+        token = txt_to_xml.Token('ЧРЕ(с)', 'Test.Regex', ['пред', '', '', '', '', ''])
+        self.assertEqual(token.lemma, 'ЧРЕЗЪ')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,6 @@
 import os
 import re
+import lib
 import tools
 from handlers import *
 
@@ -35,6 +36,7 @@ def count_chars(string, num=-1):
 
 
 def replace_chars(string, fr, to):
+
     if len(fr) != len(to):
         raise RuntimeError
 
@@ -145,8 +147,8 @@ class Token(object):
             return tools.normalise(self.form, self.ana[0])
 
     def get_lemma(self):
-        if self.ana[0] != 'мест':
 
+        if self.ana[0] != 'мест':
             if self.ana[0] == 'сущ':
                 return noun.main(self)
             elif self.ana[0] in ('прил', 'прил/ср', 'числ/п'):
@@ -157,10 +159,25 @@ class Token(object):
                 pass
             # 'прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'
             else:
-                return self.form, ''
+                lemma = self.form
+
+                if lemma.endswith(lib.cons):
+                    if lemma[-1] in lib.cons_hush:
+                        lemma += 'Ь'
+                    else:
+                        lemma += 'Ъ'
+
+                if self.ana[0] == 'пред':
+                    if lemma in lib.prep_var:
+                        lemma = lemma[:-1] + 'Ъ'
+
+                    for regex in lib.prep_rep:
+                        if re.match(regex, lemma):
+                            lemma = re.sub(regex, lib.prep_rep[regex], lemma)
+
+                return lemma, ''
 
         else:
-
             if self.ana[1] == 'личн':
                 return pron_pers_refl.main(self)
             else:
@@ -205,7 +222,7 @@ class Token(object):
                 self.ana[5] = replace_chars(ana[5], 'aeo', 'аео')
                 self.form = self.get_form()
 
-                if not self.ana[0].startswith(('гл', 'прич')):
+                if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
                     self.stem, self.fl = self.get_lemma()
                     self.lemma = self.stem + self.fl
 
