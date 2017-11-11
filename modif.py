@@ -1,113 +1,174 @@
+import re
 import lib
 import modif_lib
 
 
-# Проверка наличия титла в слове
-def tit_check(wort):
-
-    tit = 0
-    if wort.find('#') != -1:
-        tit = 1
-
-    return tit
-
-
 # Подсчёт длины слова без титла
-def real_length(wort):
+def real_len(w):
 
-    l = len(wort)
-    if tit_check(wort) == 1:
-        l = len(wort) - 1
+    if '#' in w:
+        return len(w) - 1
 
-    return l
+    return len(w)
 
 
 # Замена буквосочетания
-def repl(wort, d):
-
+def repl(w, d, mode='search'):
     for coll in d:
-        if wort.find(coll) != -1:
-            wort = wort.replace(coll, d[coll])
 
-    return wort
+        if mode == 'match':
+            if re.match(coll, w):
+                w = re.sub(coll, d[coll], w, 1)
+
+        else:
+            if re.search(coll, w):
+                w = re.sub(coll, d[coll], w)
+
+    return w
+
+
+# Замена неоднозначного буквосочетания
+def repl_var(w, p, d, mode='search'):
+    for coll in d:
+
+        if mode == 'match':
+            if re.match(coll, w):
+                if p in d[coll]:
+                    w = re.sub(coll, d[coll][p], w, 1)
+                else:
+                    w = re.sub(coll, d[coll][''], w, 1)
+
+        else:
+            if re.search(coll, w):
+                if p in d[coll]:
+                    w = re.sub(coll, d[coll][p], w)
+                else:
+                    w = re.sub(coll, d[coll][''], w)
+
+    return w
+
+
+# Замена буквосочетаний под титлом (только в начале слов)
+def modif_titlo_on_start(w, p):
+    w = repl(w, modif_lib.titlo_on_start, 'match')
+
+    # Случаи с неоднозначным раскрытием
+    w = repl_var(w, p, modif_lib.titlo_on_start_var, 'match')
+
+    return w
+
+
+# Замена буквосочетаний под титлом (везде)
+def modif_titlo(w):
+    return repl(w, modif_lib.titlo)
+
+
+# Замена буквосочетаний в сокращённых корнях без титла
+def modif_abbr(w, p):
+    # # Случаи с неоднозначным раскрытием (надстроки случаев с однозначным)
+    w = repl_var(w, p, modif_lib.abbr_var_before)
+
+    w = repl(w, modif_lib.abbr)
+
+    # # Случаи с неоднозначным раскрытием (подстроки случаев с однозначным)
+    w = repl_var(w, p, modif_lib.abbr_var_after)
+
+    return w
+
+
+# Замены *не* на конце слов
+def modif_not_on_end(w):
+    for coll in modif_lib.not_on_end:
+        mo = re.search(coll, w)
+
+        if mo and mo.end() != real_len(w):
+            w = re.sub(coll, modif_lib.not_on_end[coll], w, 1)
+
+    return w
+
+
+# Замена разных буквосочетаний вне зависимости от положения в слове
+def modif_varia(w):
+    return repl(w, modif_lib.varia)
+
+
+# Замена -ств- и -ск-
+def modif_stv(w):
+    mo = re.search('[ЕЬ]С(ТВ|К)', w)
+
+    if mo and mo.start() > 2:
+        w = re.sub('[ЕЬ]С(ТВ|К)', 'С\\1', w)
+
+    mo = re.search('С(ТВ|К)', w)
+
+    if mo and mo.start() > 2:
+        if w[mo.start() - 1] in set(lib.cons_hush) - {'Ц'}:
+            w = w[:mo.start()] + 'Е' + w[mo.start():]
+        elif w[mo.start() - 1] == 'Л':
+            w = w[:mo.start()] + 'Ь' + w[mo.start():]
+
+    return w
+
+
+# Замена -мь- и -вь- только внутри слов
+def modif_mv(w):
+    mo = re.search('([МВ])Ь', w)
+
+    if mo and mo.end() < real_len(w):
+        if w[mo.end() + 1] not in set(lib.vows) - {'Ъ', 'Ь'}:
+            w = re.sub('([МВ])Ь', '\\1', w)
+
+    return w
+
+
+# Замена буквосочетаний на конце слов
+def modif_on_end(w, p):
+    for coll in modif_lib.on_end:
+        mo = re.search(coll + '$', w)
+
+        if mo and mo.end() == real_len(w):
+            w = w[:mo.start()] + re.sub(coll, modif_lib.on_end[coll], w[mo.start():])
+
+    for coll in modif_lib.on_end_var:
+        mo = re.search(coll + '$', w)
+
+        if mo and mo.end() == real_len(w):
+            if p in modif_lib.on_end_var[coll]:
+                w = w[:mo.start()] + re.sub(coll, modif_lib.on_end_var[coll][p], w[mo.start():])
+            else:
+                w = w[:mo.start()] + re.sub(coll, modif_lib.on_end_var[coll][''], w[mo.start():])
+
+    return w
+
+
+# Исправление ошибок
+def modif_errors(w):
+    w = repl(w, modif_lib.errors)
+    w = repl(w, modif_lib.errors_on_start, 'match')
+    
+    return w
 
 
 def modif(wort, pos):
-    # Начало программы
     wort_init = wort
 
-    if tit_check(wort) == 1:
-        for coll in modif_lib.titlo_on_st:
-            if wort.find(coll) == 0:
-                # Замена буквосочетаний под титлом (только в начале слов)
-                wort = wort.replace(coll, modif_lib.titlo_on_st[coll], 1)
+    if '#' in wort:
+        wort = modif_titlo_on_start(wort, pos)
+        wort = modif_titlo(wort)
 
-        # Cлучаи с двойственной трактовкой
-        for coll in modif_lib.titlo_on_st_ambig:
-            if wort.find(coll[0]) == 0 and coll[1] == pos:
-                wort = wort.replace(coll[0], modif_lib.titlo_on_st_ambig[coll])
-
-        # Замена буквосочетаний под титлом (везде)
-        wort = repl(wort, modif_lib.titlo)
-
-    # Если была замена, отрезаем титло
     if wort_init != wort:
         wort = wort[:-1]
 
-    # Замена буквосочетаний в сокращённых корнях без титла
-    if tit_check(wort) == 0:
-        # Cлучаи с двойственной трактовкой (надстроки случаев с однозначной)
-        for coll in modif_lib.abbr_ambig_long:
-            if wort.find(coll[0]) != -1 and coll[1] == pos:
-                wort = wort.replace(coll[0], modif_lib.abbr_ambig_long[coll])
+    if '#' not in wort:
+        wort = modif_abbr(wort, pos)
 
-        # Случаи с однозначной трактовкой
-        wort = repl(wort, modif_lib.abbr)
+    wort = modif_not_on_end(wort)
+    wort = modif_varia(wort)
 
-        # Cлучаи с двойственной трактовкой (подстроки случаев с однозначной)
-        for coll in modif_lib.abbr_ambig_short:
-            if wort.find(coll[0]) != -1 and coll[1] == pos:
-                wort = wort.replace(coll[0], modif_lib.abbr_ambig_short[coll])
+    if not re.search('Ж[ЕЬ]?СК', wort):
+        wort = modif_stv(wort)
 
-    # Замены только *не* на конце слов
-    for coll in modif_lib.not_on_end:
-        if wort.find(coll) != -1 and wort.find(coll) != real_length(wort) - len(coll):
-            wort = wort.replace(coll, modif_lib.not_on_end[coll], 1)
+    wort = modif_mv(wort)
+    wort = modif_on_end(wort, pos)
 
-    # Замена разных буквосочетаний вне зависимости от положения в слове
-    wort = repl(wort, modif_lib.ad_post)
-
-    # Замена -ств- и -ск-
-    if wort.find('ЖСК') == -1 and wort.find('ЖЕСК') == -1 and wort.find('ЖЬСК') == -1:
-        for coll in modif_lib.stv:
-            if wort.find(coll) > 2:
-                wort = wort.replace(coll, modif_lib.stv[coll])
-
-        for coll in modif_lib.stv_new:
-            if wort.find(coll) > 2:
-                if wort[wort.find(coll) - 1] in set(lib.cons_hush) - {'Ц'}:  # 'ШТ'?
-                    wort = wort[:wort.find(coll)] + 'Е' + wort[wort.find(coll):]
-                elif wort[wort.find(coll) - 1] == 'Л':
-                    wort = wort[:wort.find(coll)] + 'Ь' + wort[wort.find(coll):]
-
-    # Замена -мь- и -вь- только внутри слов
-    for coll in modif_lib.mv:
-        if wort.find(coll) != -1 and wort.find(coll) != real_length(wort) - len(coll):
-            if wort.find(coll) + len(coll) < len(wort):
-                if wort[wort.find(coll) + len(coll)] not in set(lib.vows) - {'Ъ', 'Ь'}:
-                    wort = wort.replace(coll, modif_lib.mv[coll])
-
-    # Замена буквосочетаний на конце слов
-    for coll in modif_lib.on_end:
-        if wort.rfind(coll) != -1 and wort.rfind(coll) == real_length(wort) - len(coll):
-            # Тут в слайсах раньше из rfind() вычиталась 1, я убрал
-            wort = wort[:wort.rfind(coll)] + wort[wort.rfind(coll):].replace(coll, modif_lib.on_end[coll])
-
-    # Исправление ошибок
-    wort = repl(wort, modif_lib.errors)
-
-    for coll in modif_lib.errors_on_st:
-        if wort.find(coll) == 0:
-            wort = wort.replace(coll, modif_lib.errors_on_st[coll])
-
-    return wort
+    return modif_errors(wort)

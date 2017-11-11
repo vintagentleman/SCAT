@@ -3,7 +3,7 @@ import lib
 
 def get_params(t):
 
-    form = t.form
+    form = t.reg.replace('(', '').replace(')', '')
 
     # Минус маркер 'собственности'
     prop = bool('*' in form)

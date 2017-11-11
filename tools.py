@@ -1,10 +1,10 @@
 import re
 import lib
-import modif_new
+import modif
 import txt_to_xml
 
 
-def normalise(string, pos):
+def normalise(string, pos, nb):
 
     def simplify_graphics(s):
         # Однозначные графические дублеты
@@ -36,15 +36,22 @@ def normalise(string, pos):
 
     string = string.upper()
     string = simplify_graphics(string)
-    string = modif_new.modif(string, pos)
-    string = string.replace('(', '').replace(')', '')
+
+    # 'Безумные' (неэтимологические) еры и ери на концах строки, можем удалять их без разметки
+    # Не трогаем, если 1) они оканчивают словоформу либо 2) входят в состав префиков типа ВЪ- и СЪ-
+    if not ('+ъ' in nb or '+ь' in nb):
+        for yer in ('Ъ&', 'ЪZ', 'Ь&', 'ЬZ'):
+            if yer in string and not (string.endswith(yer) or string[1:].startswith(yer)):
+                string = string.replace(yer, '')
+
+    string = modif.modif(string, pos)
 
     if prop:
         string = '*' + string
     if sic:
         string = '~' + string
 
-    # Если титло остаётся - плохо, но что поделать
+    # Если титло остаётся - плохо, но бывает
     if '#' in string:
         string = string.replace('#', '')
 

@@ -51,17 +51,6 @@ def replace_chars(string, fr, to):
 
 class Token(object):
 
-    def get_reg(self):
-        # strip() добавил я: пробелы перед висячими разрывами создают проблемы
-        self.reg = self.src
-        self.reg = self.reg.replace('&', '').replace('\\', '')
-        self.reg = re.sub(r'Z -?\d+ ?', '', self.reg)
-        self.reg = replace_chars(self.reg, 'SIWDGUFRLQ', ('З', 'И', 'О', 'У', 'У', 'У', 'Ф', 'Я', 'КС', 'ПС'))
-        self.reg = replace_chars(self.reg, 'siwdgufrlq', ('з', 'и', 'о', 'у', 'у', 'у', 'ф', 'я', 'кс', 'пс'))
-        self.reg = self.reg.replace('<', '&lt;').replace('>', '&gt;').strip()
-
-        return self.reg
-
     def get_orig(self):
 
         def overline(match):
@@ -77,27 +66,27 @@ class Token(object):
 
             return result
 
-        self.orig = self.src
-        self.orig = self.orig.replace('*', '').replace('~', '').replace('[', '').replace(']', '')
-        self.orig = self.orig.replace('&', '<lb/>').replace('\\', '<cb/>')
-        self.orig = re.sub(r'Z -?\d+ ?', '<pb/>', self.orig)
-        self.orig = re.sub(r'\((.+?)\)', overline, self.orig)
-        self.orig = replace_chars(self.orig, 'IRVWU+ЭFSGDLQЯ$', 'їѧѵѡѹѣѣѳѕѫꙋѯѱꙗ҂')
+        s = self.src
+        s = s.replace('*', '').replace('~', '').replace('[', '').replace(']', '')
+        s = s.replace('&', '<lb/>').replace('\\', '<cb/>')
+        s = re.sub(r'Z -?\d+ ?', '<pb/>', s)
+        s = re.sub(r'\((.+?)\)', overline, s)
+        s = replace_chars(s, 'IRVWU+ЭFSGDLQЯ$', 'їѧѵѡѹѣѣѳѕѫꙋѯѱꙗ҂')
 
-        if '#' in self.orig:
-            self.orig = self.orig.replace('#', '')
+        if '#' in s:
+            s = s.replace('#', '')
 
-            if count_chars(self.orig) > 1:
-                self.orig = self.orig[:count_chars(self.orig, 1) + 1] + '҃' + self.orig[count_chars(self.orig, 1) + 1:]
+            if count_chars(s) > 1:
+                s = s[:count_chars(s, 1) + 1] + '҃' + s[count_chars(s, 1) + 1:]
             else:
-                self.orig = self.orig[:count_chars(self.orig, 0) + 1] + '҃' + self.orig[count_chars(self.orig, 0) + 1:]
+                s = s[:count_chars(s, 0) + 1] + '҃' + s[count_chars(s, 0) + 1:]
 
-        self.orig = self.orig.lower()
-        self.orig = self.orig.replace('ѡⷮ', 'ѿ')
-        self.orig = self.orig.replace('=', 'ѿ')
+        s = s.lower()
+        s = s.replace('ѡⷮ', 'ѿ')
+        s = s.replace('=', 'ѿ')
 
-        if self.orig.find(' ') > -1:
-            self.orig, self.corr = self.orig.split(' ', maxsplit=1)
+        if s.find(' ') > -1:
+            s, self.corr = s.split(' ', maxsplit=1)
 
             # Убрал условие (len(self.corr) > 5): проблемы с висячими разрывами, опять же
             if self.corr.endswith(('<lb/>', '<cb/>', '<pb/>')):
@@ -106,45 +95,41 @@ class Token(object):
             self.corr = self.corr.strip()[1:-1]
 
         # Но здесь убирать не надо
-        if self.orig.endswith(('<lb/>', '<cb/>', '<pb/>')) and len(self.orig) > 5:
-            self.orig = self.orig[:-5]
+        if s.endswith(('<lb/>', '<cb/>', '<pb/>')) and len(s) > 5:
+            s = s[:-5]
 
-        return self.orig
+        return s
 
-    def get_form(self):
+    def get_reg(self):
+        s = self.src
 
-        def remove_punctuation(s, nb):
-            # Учёт исправлений (обработка производится над исправленным вариантом)
-            if '<' in s:
-                s = s[s.index('<') + 1:s.index('>')]
+        # Учёт исправлений (обрабатывается исправленный вариант)
+        if '<' in s:
+            s = s[s.index('<') + 1:s.index('>')]
 
-            # 'Безумные' (неэтимологические) еры и ери на концах строки, можем удалять их без разметки
-            # Не трогаем, если 1) они оканчивают словоформу либо 2) входят в состав префиков типа ВЪ- и СЪ-
-            if not ('+ъ' in nb or '+ь' in nb):
-                for yer in ('Ъ&', 'ЪZ', 'Ь&', 'ЬZ'):
-                    if yer in s and not (s.endswith(yer) or s[1:].startswith(yer)):
-                        s = s.replace(yer, '')
+        # Знаки препинания
+        for sign in '.,:;[]':
+            s = s.replace(sign, '')
 
-            # Знаки препинания
-            for sign in '&Z.,:;[]- ':
-                s = s.replace(sign, '')
+        # Разрывы строк, колонок и страниц
+        s = s.replace('&', '').replace('\\', '')
+        s = re.sub(r'Z -?\d+ ?', '', s)
+        s = s.strip()
 
-            # Номера страниц
-            for i in range(10):
-                s = s.replace(str(i), '')
+        # Упрощение графики и нормализация
+        if hasattr(self, 'ana'):
+            # Цифирь не трогаем
+            if not self.ana[0].isnumeric():
+                # Цифирные прилагательные типа '$ЗПF#ГО' иногда размечаются (непоследовательно)
+                if self.ana[0] == 'числ/п' and '#' in s:
+                    return s.upper().replace('(', '').replace(')', '')
+                else:
+                    return tools.normalise(s, self.ana[0], self.ana[5])
 
-            return s
-
-        self.form = remove_punctuation(self.src, self.ana[5])
-
-        # Тут особая история с порядковыми прилагательными типа '$ЗПF#ГО'
-        # Неразмеченные, впрочем, всё равно остаются за бортом - делать нечего
-        if self.ana[0] == 'числ/п' and '#' in self.form:
-            # 'Упрощённое упрощение'
-            return self.form.upper().replace('(', '').replace(')', '')
+            else:
+                return self.src
         else:
-            # Упрощение графики и нормализация
-            return tools.normalise(self.form, self.ana[0])
+            return tools.normalise(s, '', '')
 
     def get_lemma(self):
 
@@ -159,7 +144,7 @@ class Token(object):
                 pass
             # 'прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'
             else:
-                lemma = self.form
+                lemma = self.reg.replace('(', '').replace(')', '')
 
                 if lemma.endswith(lib.cons):
                     if lemma[-1] in lib.cons_hush:
@@ -210,24 +195,19 @@ class Token(object):
         self.sic = '~' in self.src
         self.corr = None
 
-        self.reg = self.get_reg()
-        self.orig = self.get_orig()
-
         if ana:
             self.ana = ana
+            self.ana[1] = replace_chars(ana[1], 'аео', 'aeo')
+            self.ana[5] = replace_chars(ana[5], 'aeo', 'аео')
 
-            if not self.ana[0].isnumeric():
-                # Раскладку путают чрезвычайно часто
-                self.ana[1] = replace_chars(ana[1], 'аео', 'aeo')
-                self.ana[5] = replace_chars(ana[5], 'aeo', 'аео')
-                self.form = self.get_form()
+        self.orig = self.get_orig()
+        self.reg = self.get_reg()
 
-                if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
-                    self.stem, self.fl = self.get_lemma()
-                    self.lemma = self.stem + self.fl
-
-            else:
-                self.reg = self.src
+        if hasattr(self, 'ana'):
+            # if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
+            if not self.ana[0].startswith(('гл', 'прич')):
+                self.stem, self.fl = self.get_lemma()
+                self.lemma = self.stem + self.fl
 
     def __repr__(self):
         result = '<w xml:id="%s"' % self.token_id

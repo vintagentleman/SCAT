@@ -4,7 +4,7 @@ import re
 
 def get_params(t):
 
-    form = t.form
+    form = t.reg.replace('(', '').replace(')', '')
 
     if form[-1] not in lib.vows:
         form += 'Ъ'

@@ -6,7 +6,7 @@ from handlers.noun import noun_fl
 
 def get_params(t):
 
-    form = t.form
+    form = t.reg.replace('(', '').replace(')', '')
     pos = t.ana[0]
 
     if pos == 'мест':
