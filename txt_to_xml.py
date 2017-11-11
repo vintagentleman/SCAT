@@ -197,8 +197,11 @@ class Token(object):
 
         if ana:
             self.ana = ana
-            self.ana[1] = replace_chars(ana[1], 'аео', 'aeo')
-            self.ana[5] = replace_chars(ana[5], 'aeo', 'аео')
+            # Латиница в кириллицу
+            self.ana[0] = replace_chars(ana[0], 'aeopcyx', 'аеорсух')
+            self.ana[5] = replace_chars(ana[5], 'aeopcyx', 'аеорсух')
+            # Кириллица в латиницу
+            self.ana[1] = replace_chars(ana[1], 'аеорсух', 'aeopcyx')
 
         self.orig = self.get_orig()
         self.reg = self.get_reg()
