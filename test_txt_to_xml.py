@@ -248,16 +248,16 @@ class TestLemma(unittest.TestCase):
         token = txt_to_xml.Token('Д+ЛЫ', 'Test.Plain', ['сущ', 'o', 'тв', 'мн', 'ср', ''])
         self.assertEqual(token.lemma, 'Д+ЛО')
 
-    def test_ii(self):
-        token = txt_to_xml.Token('БЛА&ГIИ#', 'Test.II', ['прил', 'тв', 'вин', 'ед', 'м', ''])
-        self.assertEqual(token.lemma, 'БЛАГИИ')
-
-        token = txt_to_xml.Token('*ИИ#', 'Test.II', ['сущ', 'o', 'род', 'ед', 'м', ''])
-        self.assertEqual(token.lemma, '*ИИСУСЪ')
-
     def test_regex(self):
         token = txt_to_xml.Token('ЧРЕ(с)', 'Test.Regex', ['пред', '', '', '', '', ''])
         self.assertEqual(token.lemma, 'ЧРЕЗЪ')
+
+    def test_jesus(self):
+        token = txt_to_xml.Token('*ИИ#', 'Test.II', ['сущ', 'o', 'род', 'ед', 'м', ''])
+        self.assertEqual(token.lemma, '*ИИСУСЪ')
+
+        token = txt_to_xml.Token('~I <*IС#>', 'Test.Jesus', ['сущ', 'o', 'род', 'ед', 'м', ''])
+        self.assertEqual(token.lemma, '*ИИСУСЪ')
 
 
 if __name__ == '__main__':

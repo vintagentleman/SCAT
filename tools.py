@@ -1,6 +1,6 @@
 import re
 import lib
-import modif
+import modif_new
 import txt_to_xml
 
 
@@ -29,15 +29,14 @@ def normalise(string, pos):
         return s
 
     prop = bool(string.startswith('*'))
-    if prop:
-        string = string[1:]
     sic = bool(string.startswith('~'))
-    if sic:
+
+    if prop or sic:
         string = string[1:]
 
     string = string.upper()
     string = simplify_graphics(string)
-    string = modif.modif(string, pos)
+    string = modif_new.modif(string, pos)
     string = string.replace('(', '').replace(')', '')
 
     if prop:
