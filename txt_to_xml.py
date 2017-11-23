@@ -54,12 +54,11 @@ class Token(object):
     def get_orig(self):
 
         def overline(match):
-            result = replace_chars(match.group(1).upper(), 'БВГДЖЗКЛМНОПРСТХЦЧШЩFАЕD+ЭЮRGЯИIЪЬWЫУU', (
+            result = replace_chars(match.group(1).upper(), 'БВГДЖЗКЛМНОПРСТХЦЧШЩFАЕD+ЮRGЯИIЪЬWЫУU', (
                 'ⷠ', 'ⷡ', 'ⷢ', 'ⷣ', 'ⷤ', 'ⷥ', 'ⷦ', 'ⷧ', 'ⷨ', 'ⷩ',
-                'ⷪ', 'ⷫ', 'ⷬ', 'ⷭ', 'ⷮ', 'ⷯ', 'ⷰ', 'ⷱ', 'ⷲ', 'ⷳ',
-                'ⷴ', 'ⷶ', 'ⷷ', 'ⷹ', 'ⷺ', 'ⷺ', 'ⷻ', 'ⷽ', 'ⷾ', 'ⷼ',
-                '&i8-overline;', '&i10-overline;', '꙽', '&yer-overline;',
-                '&omega-overline;', '&yeri-overline;', '&u-overline;', '&ou-overline;'
+                'ⷪ', 'ⷫ', 'ⷬ', 'ⷭ', 'ⷮ', 'ⷯ', 'ⷰ', 'ⷱ', 'ⷲ',
+                'ⷳ', 'ⷴ', 'ⷶ', 'ⷷ', 'ⷹ', 'ⷺ', 'ⷻ', 'ⷽ', 'ⷾ',
+                'ⷼ', 'ꙶ', 'ꙵ', 'ꙸ', 'ꙺ', 'ꙻ', 'ꙹ', 'ꙷ', 'ⷪꙷ',
             ))
             if match.group(1).islower():
                 result = '҇' + result
@@ -71,7 +70,7 @@ class Token(object):
         s = s.replace('&', '<lb/>').replace('\\', '<cb/>')
         s = re.sub(r'Z -?\d+ ?', '<pb/>', s)
         s = re.sub(r'\((.+?)\)', overline, s)
-        s = replace_chars(s, 'IRVWU+ЭFSGDLQЯ$', 'їѧѵѡѹѣѣѳѕѫꙋѯѱꙗ҂')
+        s = replace_chars(s, 'IRVWU+FSGDLQЯ$', 'їѧѵѡѹѣѳѕѫꙋѯѱꙗ҂')
 
         if '#' in s:
             s = s.replace('#', '')
@@ -169,7 +168,7 @@ class Token(object):
                 return num_pron_imp.main(self)
 
     def __init__(self, src, token_id, ana=None):
-        self.src = replace_chars(src, 'ABEKMHOPCTXaeopcyx', 'АВЕКМНОРСТХаеорсух')
+        self.src = replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
         self.token_id = token_id
 
         # Тег смены содержательной части
