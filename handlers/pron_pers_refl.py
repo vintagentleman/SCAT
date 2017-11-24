@@ -21,7 +21,6 @@ def get_params(t):
 
 
 def main(token):
-
     form, pers, case, num = get_params(token)
     stem = 'NONE'
 
@@ -29,11 +28,9 @@ def main(token):
         for key in lib.pron_pers:
             if re.match(key[0], form) and (pers, case, num) == key[1]:
                 stem = lib.pron_pers[key]
-                break
     else:
         for key in lib.pron_refl:
             if re.match(key[0], form) and case == key[1]:
                 stem = lib.pron_refl[key]
-                break
 
-    return stem, ''
+    return ('', stem), ''

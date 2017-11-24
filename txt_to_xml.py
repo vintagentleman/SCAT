@@ -130,7 +130,7 @@ class Token(object):
         else:
             return tools.normalise(s, '', '')
 
-    def get_lemma(self):
+    def get_gram_data(self):
 
         if self.ana[0] != 'мест':
             if self.ana[0] == 'сущ':
@@ -159,7 +159,7 @@ class Token(object):
                         if re.match(regex, lemma):
                             lemma = re.sub(regex, lib.prep_rep[regex], lemma)
 
-                return lemma, ''
+                return ('', lemma), ''
 
         else:
             if self.ana[1] == 'личн':
@@ -200,7 +200,7 @@ class Token(object):
             self.ana[0] = replace_chars(ana[0], 'aeopcyx', 'аеорсух')
             self.ana[5] = replace_chars(ana[5], 'aeopcyx', 'аеорсух')
             # Кириллица в латиницу
-            self.ana[1] = replace_chars(ana[1], 'аеорсух', 'aeopcyx')
+            self.ana[1] = replace_chars(ana[1], 'аеоу', 'aeoy')
 
         self.orig = self.get_orig()
         self.reg = self.get_reg()
@@ -208,8 +208,9 @@ class Token(object):
         if hasattr(self, 'ana'):
             # if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
             if not self.ana[0].startswith(('гл', 'прич')):
-                self.stem, self.fl = self.get_lemma()
-                self.lemma = self.stem + self.fl
+                # self.stem - кортеж из основы до и после модификаций
+                self.stem, self.fl = self.get_gram_data()
+                self.lemma = self.stem[1] + self.fl
 
     def __repr__(self):
         result = '<w xml:id="%s"' % self.token_id

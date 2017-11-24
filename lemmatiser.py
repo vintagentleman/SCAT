@@ -29,10 +29,10 @@ if __name__ == '__main__':
                     continue
 
                 # Вот и всё колдовство
-                if hasattr(t, 'stem'):
+                if hasattr(t, 'lemma'):
                     out.write('\t'.join([t.token_id, t.src, t.lemma] + t.ana) + '\n')
 
-                    if t.stem == 'NONE':
+                    if t.lemma == 'NONE':
                         err.write('\t'.join([t.token_id, t.src, t.lemma] + t.ana) + '\n')
 
             f.close()

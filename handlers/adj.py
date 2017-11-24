@@ -17,7 +17,7 @@ def de_comp_suff(s, case, num, gen):
     return s
 
 
-def adj_nom_fl(s, decl):
+def adj_nom_infl(s, decl):
 
     if decl in ('a', 'o'):
         return 'Ъ'
@@ -29,7 +29,7 @@ def adj_nom_fl(s, decl):
             return 'И'
 
 
-def adj_pron_fl(s, decl):
+def adj_pron_infl(s, decl):
 
     if decl == 'тв':
         if s.endswith(lib.cons_palat):
@@ -50,38 +50,41 @@ def main(token):
 
     # Стемминг
     if decl not in ('м', 'тв'):
-        stem = tools.find_stem(form, (new_decl, case, num, gen), lib.nom_infl)
+        s_old = tools.find_stem(form, (new_decl, case, num, gen), lib.nom_infl)
     else:
-        stem = tools.find_stem(form, (new_decl, case, num, gen), lib.pron_infl)
+        s_old = tools.find_stem(form, (new_decl, case, num, gen), lib.pron_infl)
 
-    if stem != 'NONE':
+    s_new = s_old
+
+    if s_new != 'NONE':
         # Суффиксы сравнительной степени
         if pos == 'прил/ср':
-            stem = de_comp_suff(stem, case, num, gen)
+            s_new = de_comp_suff(s_new, case, num, gen)
 
         # Плюс-минус
-        stem = tools.plus_minus(stem, nb)
+        s_new = tools.plus_minus(s_new, nb)
 
         # Отмена палатализации
         if '*' in nb:
-            stem = tools.de_palat(stem, decl, new_decl)
+            s_new = tools.de_palat(s_new, decl, new_decl)
 
         # Прояснение/исчезновение редуцированных
         if (any(tag in nb for tag in ('+о', '+е', '-о', '-е'))
                 or adj_noun_tools.reduction_on(pos, new_decl, case, num, gen)):
-            stem = adj_noun_tools.de_reduce(stem, pos, decl, nb)
+            s_new = adj_noun_tools.de_reduce(s_new, pos, decl, nb)
 
         # Возвращение маркера одушевлённости
         if prop:
-            stem = '*' + stem
+            s_old = '*' + s_old
+            s_new = '*' + s_new
 
         # Нахождение флексии
         if decl not in ('м', 'тв'):
-            fl = adj_nom_fl(stem, decl)
+            infl = adj_nom_infl(s_new, decl)
         else:
-            fl = adj_pron_fl(stem, decl)
+            infl = adj_pron_infl(s_new, decl)
 
     else:
-        fl = ''
+        infl = ''
 
-    return stem, fl
+    return (s_old, s_new), infl

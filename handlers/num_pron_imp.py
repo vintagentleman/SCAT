@@ -1,7 +1,7 @@
 import tools
 import lib
 import re
-from handlers.noun import noun_fl
+from handlers.noun import noun_infl
 
 
 def get_params(t):
@@ -72,7 +72,7 @@ def pron_modif(s):
     return s
 
 
-def pron_fl(s, decl):
+def pron_infl(s, decl):
 
     if decl in ('a', 'o', 'тв'):
         if s.endswith(lib.vows):
@@ -89,7 +89,7 @@ def pron_fl(s, decl):
             return 'Ъ'
 
 
-def pron_adj_fl(s):
+def pron_adj_infl(s):
 
     if s.endswith(lib.cons_palat):
         return 'ИИ'
@@ -97,7 +97,7 @@ def pron_adj_fl(s):
         return 'ЫИ'
 
 
-def num_fl(s, decl, gen):
+def num_infl(s, decl, gen):
 
     if decl in ('тв', 'м'):
         if s.startswith('ЕДИН'):
@@ -117,111 +117,109 @@ def num_fl(s, decl, gen):
         elif s.startswith('ЧЕТЫР'):
             return 'Е'
         else:
-            return noun_fl(s, False, decl, gen)
+            return noun_infl(s, False, decl, gen)
 
 
 def main(token):
-
     form, pos, zhe, neg, decl, new_decl, case, num, gen, nb = get_params(token)
-    stem = ''
-    fl = ''
 
     if pos == 'мест':
         # Проверка на исключительность
         if re.search('Ж[ЪЬ]?Д[ЕО]$', form):
-            stem = 'КОЖДО'
+            return ('', 'КОЖДО'), ''
 
         # Проверка на вопросительность
         for key in lib.pron_interr:
             if re.match(key[0], form) and (decl, case) == key[1]:
-                stem = lib.pron_interr[key]
-                break
+                return ('', lib.pron_interr[key]), ''
     else:
         # Проверка на изменяемость обеих частей
         for key in lib.num_spec:
             if re.match(key, form):
-                stem = lib.num_spec[key]
-                break
+                return ('', lib.num_spec[key]), ''
 
-    if not stem:
+    if decl != 'р/скл':
+        # Сначала ищем в местоименной парадигме
+        s_old = tools.find_stem(form, (new_decl, case, num, gen), lib.pron_infl)
 
-        if decl != 'р/скл':
-            # Сначала ищем в местоименной парадигме
-            stem = tools.find_stem(form, (new_decl, case, num, gen), lib.pron_infl)
+        # Если не нашли, то обращаемся к именной. Актуально прежде всего для им. и вин. п., но бывает всякое
+        if s_old == 'NONE':
 
-            # Если не нашли, то обращаемся к именной. Актуально прежде всего для им. и вин. п., но бывает всякое
-            if stem == 'NONE':
-
-                if new_decl == 'тв':
-                    if gen in ('м', 'ср'):
-                        # Если склонение 'тв', а род 'м' или 'ср', то ищем так, как если бы склонение было 'o'
-                        stem = tools.find_stem(form, ('o', case, num, gen), lib.nom_infl)
-                    else:
-                        # Аналогично: 'тв' и 'ж' --> 'a'
-                        stem = tools.find_stem(form, ('a', case, num, gen), lib.nom_infl)
-
-                elif new_decl == 'м':
-                    if gen in ('м', 'ср'):
-                        # Аналогично: 'м' и 'м'/'ср' --> 'jo'
-                        stem = tools.find_stem(form, ('jo', case, num, gen), lib.nom_infl)
-                    else:
-                        # Аналогично: 'м' и 'ж' --> 'ja'
-                        stem = tools.find_stem(form, ('ja', case, num, gen), lib.nom_infl)
-
-                else:
-                    # If all else fails, проверяем именную парадигму. Особо актуально для числительных
-                    if new_decl in ('a', 'ja', 'i') and gen == 'ср':
-                        stem = tools.find_stem(form, (new_decl, case, num, 'м'), lib.nom_infl)
-                    else:
-                        stem = tools.find_stem(form, (new_decl, case, num, gen), lib.nom_infl)
-
-        else:
-
-            if (case, num, gen) in (('тв', 'ед', 'м'), ('тв', 'ед', 'ср')) or num == 'мн':
-                # В этих позициях парадигмы тип твёрдый
-                stem = tools.find_stem(form, ('тв', case, num, gen), lib.pron_infl)
-            else:
-                # В этих мягкий
-                stem = tools.find_stem(form, ('м', case, num, gen), lib.pron_infl)
-
-            # Опять же, в им./вин. (стандартно) обращаемся к именной парадигме
-            if stem == 'NONE':
-
+            if new_decl == 'тв':
                 if gen in ('м', 'ср'):
-                    stem = tools.find_stem(form, ('jo', case, num, gen), lib.nom_infl)
+                    # Если склонение 'тв', а род 'м' или 'ср', то ищем так, как если бы склонение было 'o'
+                    s_old = tools.find_stem(form, ('o', case, num, gen), lib.nom_infl)
                 else:
-                    stem = tools.find_stem(form, ('ja', case, num, gen), lib.nom_infl)
+                    # Аналогично: 'тв' и 'ж' --> 'a'
+                    s_old = tools.find_stem(form, ('a', case, num, gen), lib.nom_infl)
 
-        if stem != 'NONE':
-            # Модификация основы
-            if pos == 'мест':
-                stem = pron_modif(stem)
-
-            # Плюс-минус
-            stem = tools.plus_minus(stem, nb)
-
-            # Отмена палатализации
-            if '*' in nb:
-                stem = tools.de_palat(stem, decl, new_decl)
-
-            # Нахождение флексии
-            if pos == 'мест':
-                if stem not in ('К', 'КОТОР'):
-                    fl = pron_fl(stem, decl)
+            elif new_decl == 'м':
+                if gen in ('м', 'ср'):
+                    # Аналогично: 'м' и 'м'/'ср' --> 'jo'
+                    s_old = tools.find_stem(form, ('jo', case, num, gen), lib.nom_infl)
                 else:
-                    fl = pron_adj_fl(stem)
+                    # Аналогично: 'м' и 'ж' --> 'ja'
+                    s_old = tools.find_stem(form, ('ja', case, num, gen), lib.nom_infl)
+
             else:
-                fl = num_fl(stem, decl, gen)
+                # If all else fails, проверяем именную парадигму. Особо актуально для числительных
+                if new_decl in ('a', 'ja', 'i') and gen == 'ср':
+                    s_old = tools.find_stem(form, (new_decl, case, num, 'м'), lib.nom_infl)
+                else:
+                    s_old = tools.find_stem(form, (new_decl, case, num, gen), lib.nom_infl)
 
-    if stem != 'NONE' and pos == 'мест':
+    else:
+
+        if (case, num, gen) in (('тв', 'ед', 'м'), ('тв', 'ед', 'ср')) or num == 'мн':
+            # В этих позициях парадигмы тип твёрдый
+            s_old = tools.find_stem(form, ('тв', case, num, gen), lib.pron_infl)
+        else:
+            # В этих мягкий
+            s_old = tools.find_stem(form, ('м', case, num, gen), lib.pron_infl)
+
+        # Опять же, в им./вин. (стандартно) обращаемся к именной парадигме
+        if s_old == 'NONE':
+
+            if gen in ('м', 'ср'):
+                s_old = tools.find_stem(form, ('jo', case, num, gen), lib.nom_infl)
+            else:
+                s_old = tools.find_stem(form, ('ja', case, num, gen), lib.nom_infl)
+
+    s_new = s_old
+
+    if s_new != 'NONE':
+        # Модификация основы
+        if pos == 'мест':
+            s_new = pron_modif(s_new)
+
+        # Плюс-минус
+        s_new = tools.plus_minus(s_new, nb)
+
+        # Отмена палатализации
+        if '*' in nb:
+            s_new = tools.de_palat(s_new, decl, new_decl)
+
+        # Нахождение флексии
+        if pos == 'мест':
+            if s_new not in ('К', 'КОТОР'):
+                infl = pron_infl(s_new, decl)
+            else:
+                infl = pron_adj_infl(s_new)
+        else:
+            infl = num_infl(s_new, decl, gen)
+
+    else:
+        infl = ''
+
+    if s_new != 'NONE' and pos == 'мест':
         if zhe:
-            fl += 'ЖЕ'
+            infl += 'ЖЕ'
 
         if neg:
-            stem = neg.group() + stem
+            s_new = neg.group() + s_new
 
         # Префикс НИ- тут отсечён предлогом
-        if stem in ('КТО', 'ЧТО') and zhe:
-            stem = 'НИ' + stem
+        if s_new in ('КТО', 'ЧТО') and zhe:
+            s_new = 'НИ' + s_new
 
-    return stem, fl
+    return (s_old, s_new), infl
