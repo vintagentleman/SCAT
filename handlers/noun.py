@@ -1,23 +1,16 @@
 import re
 import lib
 import tools
-from handlers import adj_noun_tools
+from handlers import Nom
 
 
 def decl_spec_modif(stem, decl, new_decl, nb):
 
     def de_suffix(s, d, nd):
 
-        them_suff = {
-            'men': '([ЕЯ]|[ЪЬ]?)Н$',
-            'ent': '[АЯ]Т$',
-            'es': '(Е|[ЪЬ]?)С$',
-            'er': '(Е|[ЪЬ]?)Р$',
-        }
-
-        for th in them_suff:
+        for th in lib.them_suff:
             if th in (d, nd):
-                suf = re.search(them_suff[th], s)
+                suf = re.search(lib.them_suff[th], s)
 
                 if suf:
                     s = s[:-len(suf.group())]
@@ -153,51 +146,51 @@ def grd_check(s, prop):
 
 def main(token):
     # Извлечение данных по токену
-    form, prop, pos, decl, new_decl, case, num, pt, gen, nb = adj_noun_tools.get_params(token)
+    gr = Nom(token)
 
     # Проверка на исключительность
     for key in lib.noun_spec:
-        if re.match(key, form):
+        if re.match(key, gr.form):
             return ('', lib.noun_spec[key]), ''
 
     # Стемминг (с учётом особого смешения)
-    if new_decl in ('a', 'ja', 'i') and gen == 'ср':
-        s_old = tools.find_stem(form, (new_decl, case, num, 'м'), lib.nom_infl)
+    if gr.d_new in ('a', 'ja', 'i') and gr.gen == 'ср':
+        s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, 'м'), lib.nom_infl)
     else:
-        s_old = tools.find_stem(form, (new_decl, case, num, gen), lib.nom_infl)
+        s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, gr.gen), lib.nom_infl)
 
     s_new = s_old
 
     # Проверка на склоняемость второй части
-    s_new, grd = grd_check(s_new, prop)
+    s_new, grd = grd_check(s_new, gr.prop)
     if grd:
-        s_new = tools.find_stem(s_new, (new_decl, case, num, gen), lib.nom_infl)
+        s_new = tools.find_stem(s_new, (gr.d_new, gr.case, gr.num, gr.gen), lib.nom_infl)
 
     # Обработка основы
     if s_new != 'NONE':
         # Модификации по типам склонения и другие
-        s_new = decl_spec_modif(s_new, decl, new_decl, nb)
+        s_new = decl_spec_modif(s_new, gr.d_old, gr.d_new, gr.nb)
 
         # Отмена палатализации
-        if '*' in nb:
-            s_new = tools.de_palat(s_new, decl, new_decl)
+        if '*' in gr.nb:
+            s_new = tools.de_palat(s_new, gr.d_old, gr.d_new)
 
         # Прояснение/исчезновение редуцированных
-        if (any(tag in nb for tag in ('+о', '+е', '-о', '-е'))
-                or adj_noun_tools.reduction_on(pos, new_decl, case, num, gen)):
-            s_new = adj_noun_tools.de_reduce(s_new, pos, decl, nb)
+        if (any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е'))
+                or tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
+            s_new = tools.de_reduce(s_new, gr.pos, gr.d_old, gr.nb)
 
         # 'НОВЪ' --> 'НОВГОРОДЪ'; 'ЦАРЬ' --> 'ЦАРГРАДЪ' (?)
         if grd:
             s_new += grd
 
         # Возвращение маркера одушевлённости
-        if prop:
+        if gr.prop:
             s_old = '*' + s_old
             s_new = '*' + s_new
 
         # Нахождение флексии
-        infl = noun_infl(s_new, pt, decl, gen)
+        infl = noun_infl(s_new, gr.pt, gr.d_old, gr.gen)
 
     else:
         infl = ''

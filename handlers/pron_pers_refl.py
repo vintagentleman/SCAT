@@ -1,36 +1,19 @@
 import lib
 import re
-
-
-def get_params(t):
-
-    form = t.reg.replace('(', '').replace(')', '')
-
-    if form[-1] not in lib.vows:
-        form += 'Ъ'
-
-    pers = t.ana[2]
-    case = t.ana[3][t.ana[3].find('/') + 1:]
-
-    if pers != 'возвр':
-        num = t.ana[4][t.ana[4].find('/') + 1:]
-    else:
-        num = ''
-
-    return form, pers, case, num
+from handlers import Pron
 
 
 def main(token):
-    form, pers, case, num = get_params(token)
+    gr = Pron(token)
     stem = 'NONE'
 
-    if pers != 'возвр':
+    if gr.pers != 'возвр':
         for key in lib.pron_pers:
-            if re.match(key[0], form) and (pers, case, num) == key[1]:
+            if re.match(key[0], gr.form) and (gr.pers, gr.case, gr.num) == key[1]:
                 stem = lib.pron_pers[key]
     else:
         for key in lib.pron_refl:
-            if re.match(key[0], form) and case == key[1]:
+            if re.match(key[0], gr.form) and gr.case == key[1]:
                 stem = lib.pron_refl[key]
 
     return ('', stem), ''

@@ -1,7 +1,7 @@
 import re
 import lib
 import tools
-from handlers import adj_noun_tools
+from handlers import Nom
 
 
 def de_comp_suff(s, case, num, gen):
@@ -46,43 +46,43 @@ def adj_pron_infl(s, decl):
 
 def main(token):
     # Извлечение данных по токену
-    form, prop, pos, decl, new_decl, case, num, pt, gen, nb = adj_noun_tools.get_params(token)
+    gr = Nom(token)
 
     # Стемминг
-    if decl not in ('м', 'тв'):
-        s_old = tools.find_stem(form, (new_decl, case, num, gen), lib.nom_infl)
+    if gr.d_old not in ('м', 'тв'):
+        s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, gr.gen), lib.nom_infl)
     else:
-        s_old = tools.find_stem(form, (new_decl, case, num, gen), lib.pron_infl)
+        s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, gr.gen), lib.pron_infl)
 
     s_new = s_old
 
     if s_new != 'NONE':
         # Суффиксы сравнительной степени
-        if pos == 'прил/ср':
-            s_new = de_comp_suff(s_new, case, num, gen)
+        if gr.pos == 'прил/ср':
+            s_new = de_comp_suff(s_new, gr.case, gr.num, gr.gen)
 
         # Плюс-минус
-        s_new = tools.plus_minus(s_new, nb)
+        s_new = tools.plus_minus(s_new, gr.nb)
 
         # Отмена палатализации
-        if '*' in nb:
-            s_new = tools.de_palat(s_new, decl, new_decl)
+        if '*' in gr.nb:
+            s_new = tools.de_palat(s_new, gr.d_old, gr.d_new)
 
         # Прояснение/исчезновение редуцированных
-        if (any(tag in nb for tag in ('+о', '+е', '-о', '-е'))
-                or adj_noun_tools.reduction_on(pos, new_decl, case, num, gen)):
-            s_new = adj_noun_tools.de_reduce(s_new, pos, decl, nb)
+        if (any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е'))
+                or tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
+            s_new = tools.de_reduce(s_new, gr.pos, gr.d_old, gr.nb)
 
         # Возвращение маркера одушевлённости
-        if prop:
+        if gr.prop:
             s_old = '*' + s_old
             s_new = '*' + s_new
 
         # Нахождение флексии
-        if decl not in ('м', 'тв'):
-            infl = adj_nom_infl(s_new, decl)
+        if gr.d_old not in ('м', 'тв'):
+            infl = adj_nom_infl(s_new, gr.d_old)
         else:
-            infl = adj_pron_infl(s_new, decl)
+            infl = adj_pron_infl(s_new, gr.d_old)
 
     else:
         infl = ''
