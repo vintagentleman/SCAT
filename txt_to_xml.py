@@ -118,18 +118,18 @@ class Token(object):
 
     def get_gram_data(self):
 
-        if self.ana[0] != 'мест':
-            if self.ana[0] == 'сущ':
+        if self.pos != 'мест':
+            if self.pos == 'сущ':
                 return noun.main(self)
-            elif self.ana[0] in ('прил', 'прил/ср', 'числ/п'):
+            elif self.pos in ('прил', 'прил/ср', 'числ/п'):
                 return adj.main(self)
-            elif self.ana[0] == 'числ':
+            elif self.pos == 'числ':
                 return num_pron_imp.main(self)
-            elif self.ana[0] in ('гл', 'гл/в'):
+            elif self.pos in ('гл', 'гл/в'):
                 return verb.main(self)
-            elif self.ana[0] in ('прич', 'прич/в'):
+            elif self.pos in ('прич', 'прич/в'):
                 pass
-            elif self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
+            elif self.pos in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
                 lemma = self.reg.replace('(', '').replace(')', '')
 
                 if lemma.endswith(lib.cons):
@@ -138,7 +138,7 @@ class Token(object):
                     else:
                         lemma += 'Ъ'
 
-                if self.ana[0] == 'пред':
+                if self.pos == 'пред':
                     if lemma in lib.prep_var:
                         lemma = lemma[:-1] + 'Ъ'
 
@@ -186,15 +186,17 @@ class Token(object):
 
         if ana:
             self.ana = ana
-            # Кириллица в латиницу
-            self.ana[1] = tools.replace_chars(ana[1], 'аеоу', 'aeoy')
+            self.pos = tools.replace_chars(self.ana[0], 'aeopcyx', 'аеорсух')
+            if not any(self.pos.endswith(spec) for spec in ('/в', '/н', '/п', '/ср')):
+                self.pos = self.pos.split('/')[-1]
 
         self.orig = self.get_orig()
         self.reg = self.get_reg()
 
-        if hasattr(self, 'ana'):
+        # Отбрасываем пустые строки и цифирь
+        if hasattr(self, 'ana') and self.ana[0] and not self.ana[0].isnumeric():
             # if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
-            if self.ana[0].startswith('гл'):
+            if not self.ana[0].startswith('прич'):
                 # self.stem - кортеж из основы до и после модификаций
                 self.stem, self.fl = self.get_gram_data()
                 if self.stem[1]:

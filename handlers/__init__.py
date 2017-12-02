@@ -10,7 +10,7 @@ class Gram(object):
     def __init__(self, t):
         self.form = t.reg.replace('(', '').replace(')', '')
         # Латиница в кириллицу
-        self.pos = replace_chars(t.ana[0], 'aeopcyx', 'аеорсух')
+        self.pos = t.pos
 
 
 class Nom(Gram):
