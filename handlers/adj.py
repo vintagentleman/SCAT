@@ -2,6 +2,7 @@ import re
 import lib
 import tools
 from handlers import Nom
+from handlers.noun import noun_infl
 
 
 def de_comp_suff(s, case, num, gen):
@@ -11,27 +12,12 @@ def de_comp_suff(s, case, num, gen):
         if suf:
             s = s[:-len(suf.group())]
 
-    if not s.endswith(('+', 'А', 'Е')):
-        s += 'И'
-
     return s
-
-
-def adj_nom_infl(s, decl):
-
-    if decl in ('a', 'o'):
-        return 'Ъ'
-
-    else:
-        if s.endswith(lib.cons_soft + lib.cons_hush):
-            return 'Ь'
-        else:
-            return 'И'
 
 
 def adj_pron_infl(s, decl):
 
-    if decl == 'тв':
+    if decl in ('a', 'o', 'тв'):
         if s.endswith(lib.cons_palat):
             return 'ИИ'
         else:
@@ -68,10 +54,12 @@ def main(token):
         if '*' in gr.nb:
             s_new = tools.de_palat(s_new, gr.d_old, gr.d_new)
 
-        # Прояснение/исчезновение редуцированных
-        if (any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е'))
-                or tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
-            s_new = tools.de_reduce(s_new, gr.pos, gr.d_old, gr.nb)
+        # Удаление редуцированных в конечном слоге основы (всегда слабом)
+        if (any(tag in gr.nb for tag in ('-о', '-е')) or s_new.endswith('ЕН')
+                and tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
+            s_new = s_new[:-2] + s_new[-1]
+
+        # TODO: заменить минус в '-о' и '-е' на плюс и внести в разметку (в таком случае не удалять)
 
         # Возвращение маркера одушевлённости
         if gr.prop:
@@ -79,8 +67,8 @@ def main(token):
             s_new = '*' + s_new
 
         # Нахождение флексии
-        if gr.d_old not in ('м', 'тв'):
-            infl = adj_nom_infl(s_new, gr.d_old)
+        if gr.prop and gr.d_old not in ('м', 'тв'):
+            infl = noun_infl(s_new, gr.pt, gr.d_old, gr.gen)
         else:
             infl = adj_pron_infl(s_new, gr.d_old)
 

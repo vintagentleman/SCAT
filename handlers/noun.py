@@ -178,7 +178,7 @@ def main(token):
         # Прояснение/исчезновение редуцированных
         if (any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е'))
                 or tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
-            s_new = tools.de_reduce(s_new, gr.pos, gr.d_old, gr.nb)
+            s_new = tools.de_reduce(s_new, gr.d_old, gr.nb)
 
         # 'НОВЪ' --> 'НОВГОРОДЪ'; 'ЦАРЬ' --> 'ЦАРГРАДЪ' (?)
         if grd:
