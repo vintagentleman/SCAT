@@ -35,26 +35,12 @@ def count_chars(string, num=-1):
     return len(string)
 
 
-def replace_chars(string, fr, to):
-
-    if len(fr) != len(to):
-        raise RuntimeError
-
-    result = list(string)
-
-    for i in range(len(result)):
-        if result[i] in fr:
-            result[i] = to[fr.index(result[i])]
-
-    return ''.join(result)
-
-
 class Token(object):
 
     def get_orig(self):
 
         def overline(match):
-            result = replace_chars(match.group(1).upper(), 'БВГДЖЗКЛМНОПРСТХЦЧШЩFАЕD+ЮRGЯИIЪЬWЫУU', (
+            result = tools.replace_chars(match.group(1).upper(), 'БВГДЖЗКЛМНОПРСТХЦЧШЩFАЕD+ЮRGЯИIЪЬWЫУU', (
                 'ⷠ', 'ⷡ', 'ⷢ', 'ⷣ', 'ⷤ', 'ⷥ', 'ⷦ', 'ⷧ', 'ⷨ', 'ⷩ',
                 'ⷪ', 'ⷫ', 'ⷬ', 'ⷭ', 'ⷮ', 'ⷯ', 'ⷰ', 'ⷱ', 'ⷲ',
                 'ⷳ', 'ⷴ', 'ⷶ', 'ⷷ', 'ⷹ', 'ⷺ', 'ⷻ', 'ⷽ', 'ⷾ',
@@ -70,7 +56,7 @@ class Token(object):
         s = s.replace('&', '<lb/>').replace('\\', '<cb/>')
         s = re.sub(r'Z -?\d+ ?', '<pb/>', s)
         s = re.sub(r'\((.+?)\)', overline, s)
-        s = replace_chars(s, 'IRVWU+FSGDLQЯ$', 'їѧѵѡѹѣѳѕѫꙋѯѱꙗ҂')
+        s = tools.replace_chars(s, 'IRVWU+FSGDLQЯ$', 'їѧѵѡѹѣѳѕѫꙋѯѱꙗ҂')
 
         if '#' in s:
             s = s.replace('#', '')
@@ -139,10 +125,11 @@ class Token(object):
                 return adj.main(self)
             elif self.ana[0] == 'числ':
                 return num_pron_imp.main(self)
-            elif self.ana[0] in ('гл', 'гл/в', 'прич', 'прич/в'):
+            elif self.ana[0] in ('гл', 'гл/в'):
+                return verb.main(self)
+            elif self.ana[0] in ('прич', 'прич/в'):
                 pass
-            # 'прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'
-            else:
+            elif self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
                 lemma = self.reg.replace('(', '').replace(')', '')
 
                 if lemma.endswith(lib.cons):
@@ -161,6 +148,9 @@ class Token(object):
 
                 return ('', lemma), ''
 
+            else:
+                return ('', 'NONE'), ''
+
         else:
             if self.ana[1] == 'личн':
                 return pron_pers_refl.main(self)
@@ -168,7 +158,7 @@ class Token(object):
                 return num_pron_imp.main(self)
 
     def __init__(self, src, token_id, ana=None):
-        self.src = replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
+        self.src = tools.replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
         self.token_id = token_id
 
         # Тег смены содержательной части
@@ -196,21 +186,19 @@ class Token(object):
 
         if ana:
             self.ana = ana
-            # Латиница в кириллицу
-            self.ana[0] = replace_chars(ana[0], 'aeopcyx', 'аеорсух')
-            self.ana[5] = replace_chars(ana[5], 'aeopcyx', 'аеорсух')
             # Кириллица в латиницу
-            self.ana[1] = replace_chars(ana[1], 'аеоу', 'aeoy')
+            self.ana[1] = tools.replace_chars(ana[1], 'аеоу', 'aeoy')
 
         self.orig = self.get_orig()
         self.reg = self.get_reg()
 
         if hasattr(self, 'ana'):
             # if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
-            if not self.ana[0].startswith(('гл', 'прич')):
+            if self.ana[0].startswith('гл'):
                 # self.stem - кортеж из основы до и после модификаций
                 self.stem, self.fl = self.get_gram_data()
-                self.lemma = self.stem[1] + self.fl
+                if self.stem[1]:
+                    self.lemma = self.stem[1] + self.fl
 
     def __repr__(self):
         result = '<w xml:id="%s"' % self.token_id

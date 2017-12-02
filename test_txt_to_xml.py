@@ -1,4 +1,5 @@
 import unittest
+import tools
 import txt_to_xml
 
 
@@ -9,7 +10,7 @@ class TestMeta(unittest.TestCase):
         fr = 'неку'
         to = ('яч', 'см', 'и', 'ФЫ')
 
-        self.assertEqual(txt_to_xml.replace_chars(s, fr, to), 'ФЫисмяч')
+        self.assertEqual(tools.replace_chars(s, fr, to), 'ФЫисмяч')
 
     def test_count_chars(self):
         s = '&ard;С<pb/>&testest;&testetst;<asd/><qwe/><qweqwe/>&r;<qqq/>Л<asd/>'

@@ -1,12 +1,12 @@
 import os
 import re
 import glob
-import txt_to_xml
+import tools
 from lib import letter_values
 
 
 def parse_line(line):
-    line = txt_to_xml.replace_chars(line, 'ABEKMHOPCTXaeopcyx', 'АВЕКМНОРСТХаеорсух')
+    line = tools.replace_chars(line, 'ABEKMHOPCTXaeopcyx', 'АВЕКМНОРСТХаеорсух')
 
     nums = line[line.rfind('/') + 1:].split()
     line = line[:line.rfind('/')].split()

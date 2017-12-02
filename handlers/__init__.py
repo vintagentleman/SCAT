@@ -1,15 +1,16 @@
 import re
 import lib
+from tools import replace_chars
 
-
-__all__ = ['adj', 'noun', 'num_pron_imp', 'pron_pers_refl']
+__all__ = ['adj', 'noun', 'num_pron_imp', 'pron_pers_refl', 'verb']
 
 
 class Gram(object):
 
     def __init__(self, t):
         self.form = t.reg.replace('(', '').replace(')', '')
-        self.pos = t.ana[0]
+        # Латиница в кириллицу
+        self.pos = replace_chars(t.ana[0], 'aeopcyx', 'аеорсух')
 
 
 class Nom(Gram):
@@ -40,11 +41,11 @@ class Nom(Gram):
         if self.form[-1] not in lib.vows:
             self.form += '`'
 
-        # Типы склонения: старый для основы, новый для флексии
+        # Типы склонения: старый для основы, новый для флексии; здесь кириллица в латиницу (для гласных)
         if '/' in t.ana[1] and t.ana[1] != 'р/скл':
-            self.d_old, self.d_new = t.ana[1].split('/')
+            self.d_old, self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy').split('/')
         else:
-            self.d_old = self.d_new = t.ana[1]
+            self.d_old = self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy')
 
         self.case = t.ana[2].split('/')[-1]
 
@@ -61,7 +62,8 @@ class Nom(Gram):
         else:
             self.gen = t.ana[4].split('/')[-1]
 
-        self.nb = t.ana[5]
+        # Латиница в кириллицу
+        self.nb = replace_chars(t.ana[5], 'aeopcyx', 'аеорсух')
 
 
 class Pron(Gram):
@@ -79,3 +81,55 @@ class Pron(Gram):
             self.num = t.ana[4].split('/')[-1]
         else:
             self.num = ''
+
+
+class Verb(Gram):
+
+    def __init__(self, t):
+        super().__init__(t)
+
+        # Маркер возвратности
+        self.refl = bool(self.pos.endswith('/в'))
+        if self.refl:
+            self.form = self.form[:-2]
+            self.pos = self.pos[:-2]
+
+        if self.form[-1] not in lib.vows:
+            self.form += '`'
+
+        self.mood = replace_chars(t.ana[1], 'aeopcyx', 'аеорсух')
+
+        if self.mood == 'изъяв':
+            self.tense = t.ana[2]
+
+            if t.ana[3].isnumeric():
+                self.pers = t.ana[3]
+                self.gen = ''
+            else:
+                self.pers = ''
+                self.gen = t.ana[3]
+
+            self.num = t.ana[4]
+
+            if t.ana[5].isnumeric():
+                self.role = ''
+                self.cls = t.ana[5]
+            else:
+                self.role = t.ana[5]
+                self.cls = ''
+
+        elif self.mood == 'сосл':
+            if t.ana[2].isnumeric():
+                self.pers = t.ana[2]
+                self.gen = ''
+            else:
+                self.pers = ''
+                self.gen = t.ana[2]
+
+            self.num = t.ana[3]
+            self.role = t.ana[4]
+
+        elif self.mood == 'повел':
+            self.pers = t.ana[2]
+            self.num = t.ana[3]
+            self.cls = t.ana[4]

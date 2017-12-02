@@ -1,14 +1,27 @@
 import re
 import lib
 import modif
-import txt_to_xml
+
+
+def replace_chars(string, fr, to):
+
+    if len(fr) != len(to):
+        raise RuntimeError
+
+    result = list(string)
+
+    for i in range(len(result)):
+        if result[i] in fr:
+            result[i] = to[fr.index(result[i])]
+
+    return ''.join(result)
 
 
 def normalise(string, pos, nb):
 
     def simplify_graphics(s):
         # Однозначные графические дублеты
-        s = txt_to_xml.replace_chars(s, 'SIWDGUFRLQ', ('З', 'И', 'О', 'У', 'У', 'У', 'Ф', 'Я', 'КС', 'ПС'))
+        s = replace_chars(s, 'SIWDGUFRLQ', ('З', 'И', 'О', 'У', 'У', 'У', 'Ф', 'Я', 'КС', 'ПС'))
 
         # С ижицей не всё слава богу
         izh = (s.find(c) for c in s if c == 'V')
