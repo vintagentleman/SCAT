@@ -146,6 +146,9 @@ class Token(object):
                         if re.match(regex, lemma):
                             lemma = re.sub(regex, lib.prep_rep[regex], lemma)
 
+                elif self.pos == 'суп':
+                    lemma = lemma[:-1] + 'И'
+
                 return ('', lemma), ''
 
             else:

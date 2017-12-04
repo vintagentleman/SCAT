@@ -133,3 +133,27 @@ class Verb(Gram):
             self.pers = t.ana[2]
             self.num = t.ana[3]
             self.cls = t.ana[4]
+
+
+class Part(Gram):
+
+    def __init__(self, t):
+        super().__init__(t)
+
+        self.refl = bool(self.pos.endswith('/в'))
+        if self.refl:
+            self.form = self.form[:-2]
+            self.pos = self.pos[:-2]
+
+        if self.form[-1] not in lib.vows:
+            self.form += '`'
+
+        if '/' in t.ana[1]:
+            self.d_old, self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy').split('/')
+        else:
+            self.d_old = self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy')
+
+        self.tense = t.ana[2]
+        self.case = t.ana[3].split('/')[-1]
+        self.num = t.ana[4].split('/')[-1]
+        self.gen = t.ana[4].split('/')[-1]
