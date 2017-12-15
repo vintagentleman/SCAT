@@ -20,19 +20,48 @@ def part_el(gr):
             s_new = re.sub('(.*)Ш[+Е]$', '\\1ИТИ', s_new)
             ok = True
 
-        # 1-й подкласс 6-го класса
-        for regex in lib.cls_6_subcls_1:
+        # 7-й класс (ГСРЯ)
+
+        # Основы, совпадающие с инфинитивными (группа а) 2-го подкласса 6-го класса по АГ)
+        for regex in lib.cls_7_cons:
             if re.match('(.*)%s$' % regex, s_new):
+                s_new += 'ТИ'
+                ok = True
+
+        # Исключения (с чередованием в основе)
+        for regex in lib.cls_7_cons_exc:
+            if re.match('(.*)%s$' % regex, s_new):
+                s_new = re.sub('(.*)%s$' % regex, lib.cls_7_cons_exc[regex], s_new) + 'ТИ'
+                ok = True
+
+        # Не совпадающие (7-й подкласс 7-го класса по АГ)
+        for regex in lib.cls_7_vow:
+            if re.match('(.*)%s$' % regex, s_new):
+                s_new += 'СТИ'
+                ok = True
+
+        # 8-й класс (ГСРЯ)
+        for regex in lib.cls_8:
+            if re.match('(.*)%s$' % regex, s_new):
+                s_new = s_new[:-1]
+
                 # Чередование с нулём
-                if '?' not in regex:
-                    s_new = s_new[:-1]
+                if s_new in lib.cls_8_exc:
+                    s_new += lib.cls_8_exc[s_new]
 
                 s_new += 'ЧИ'
                 ok = True
 
-        # TODO: 4-й класс (-ну-), 2-й подкласс 6-го класса и 7-й класс (-сти)
+        # 9-й класс (ГСРЯ)
+        for regex in lib.cls_9:
+            if re.match('(.*)%s$' % regex, s_new):
+                s_new += 'ЕТИ'
+                ok = True
 
         if not ok:
+            if s_new[-1] in lib.cons:
+                s_new += 'НУ'
+
             s_new += 'ТИ'
 
         if gr.refl:
