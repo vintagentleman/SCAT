@@ -8,7 +8,7 @@ from handlers.noun import noun_infl
 def de_comp_suff(s, case, num, gen):
 
     if (case, num, gen) not in (('им', 'ед', 'м'), ('им', 'ед', 'ср')):
-        suf = re.search('[ИЪЬ]Ш$', s)
+        suf = re.search('[ИЪЬ]?Ш$', s)
         if suf:
             s = s[:-len(suf.group())]
 
