@@ -85,23 +85,30 @@ def find_stem(form, gram_comb, fl_dict):
     return stem
 
 
-def de_palat(s, decl, new_decl):
+def de_palat(s, pos, d_pair=None):
 
-    if (decl, new_decl) == ('jo', 'o'):
-        if s.endswith('Ч'):
-            s = s[:-1] + 'Ц'
-        elif s.endswith('Ж'):
-            s = s[:-1] + 'З'
+    if pos not in ('гл', 'прич'):
+        if d_pair == ('jo', 'o'):
+            if s[-1] == 'Ч':
+                return s[:-1] + 'Ц'
+            elif s[-1] == 'Ж':
+                return s[:-1] + 'З'
+
+        else:
+            if s[-1] in ('Ч', 'Ц', 'Т'):
+                return s[:-1] + 'К'
+            elif s[-1] in ('Ж', 'З'):
+                return s[:-1] + 'Г'
+            elif s[-1] in ('Ш', 'С'):
+                return s[:-1] + 'Х'
 
     else:
-        if s.endswith(('Ч', 'Ц')):
-            s = s[:-1] + 'К'
-        elif s.endswith(('Ж', 'З')):
-            s = s[:-1] + 'Г'
-        elif s.endswith(('Ш', 'С')):
-            s = s[:-1] + 'Х'
-        elif s.endswith('СТ'):
-            s = s[:-1] + 'К'
+        if re.search('ШТ?$', s):
+            return re.sub('ШТ?$', 'Т', s)
+        elif re.search('ЖД?$', s):
+            return re.sub('ЖД?$', 'Д', s)
+        elif re.search('[БВМПФ]Л$', s):
+            return s[:-1]
 
     return s
 

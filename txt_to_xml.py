@@ -128,7 +128,7 @@ class Token(object):
             elif self.pos in ('гл', 'гл/в'):
                 return verb.main(self)
             elif self.pos in ('прич', 'прич/в'):
-                pass
+                return part.main(self)
             elif self.pos in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
                 lemma = self.reg.replace('(', '').replace(')', '')
 
@@ -199,7 +199,7 @@ class Token(object):
         # Отбрасываем пустые строки и цифирь
         if hasattr(self, 'ana') and self.ana[0] and not self.ana[0].isnumeric():
             # if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
-            if not self.ana[0].startswith('прич'):
+            if self.ana[0].startswith('прич'):
                 # self.stem - кортеж из основы до и после модификаций
                 self.stem, self.fl = self.get_gram_data()
                 if self.stem[1]:

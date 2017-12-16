@@ -4,6 +4,46 @@ import tools
 from handlers import Verb
 
 
+def past_stem_modif(s, trim=True):
+    # 7-й класс (ГСРЯ)
+
+    # Основы, совпадающие с инфинитивными (группа а) 2-го подкласса 6-го класса по АГ)
+    for regex in lib.cls_7_cons:
+        if re.match('(.*)%s$' % regex, s):
+            return s + 'ТИ'
+
+    # Исключения (с чередованием в основе)
+    for regex in lib.cls_7_cons_exc:
+        if re.match('(.*)%s$' % regex, s):
+            return re.sub('(.*)%s$' % regex, lib.cls_7_cons_exc[regex], s) + 'ТИ'
+
+    # Не совпадающие (7-й подкласс 7-го класса по АГ)
+    for regex in lib.cls_7_vow:
+        if trim:
+            if re.match('(.*)%s$' % regex, s[:-1]):
+                return s[:-1] + 'СТИ'
+        else:
+            if re.match('(.*)%s$' % regex, s):
+                return s + 'СТИ'
+
+    # 8-й класс (ГСРЯ)
+    for regex in lib.cls_8:
+        if re.match('(.*)%s$' % regex, s):
+            s = s[:-1]
+
+            # Чередование с нулём
+            if s in lib.cls_8_exc:
+                s += lib.cls_8_exc[s]
+
+            return s + 'ЧИ'
+
+    # 9-й класс (ГСРЯ)
+    if re.match('(.*)[МПТ][+Е]Р$', s):
+        return s + 'ЕТИ'
+
+    return s
+
+
 def part_el(gr):
     # Стемминг
     s_old = tools.find_stem(gr.form, (gr.gen, gr.num), lib.part_el_infl)
@@ -20,46 +60,13 @@ def part_el(gr):
             s_new = re.sub('(.*)Ш[+Е]$', '\\1ИТИ', s_new)
             ok = True
 
-        # 7-й класс (ГСРЯ)
-
-        # Основы, совпадающие с инфинитивными (группа а) 2-го подкласса 6-го класса по АГ)
-        for regex in lib.cls_7_cons:
-            if re.match('(.*)%s$' % regex, s_new):
-                s_new += 'ТИ'
-                ok = True
-
-        # Исключения (с чередованием в основе)
-        for regex in lib.cls_7_cons_exc:
-            if re.match('(.*)%s$' % regex, s_new):
-                s_new = re.sub('(.*)%s$' % regex, lib.cls_7_cons_exc[regex], s_new) + 'ТИ'
-                ok = True
-
-        # Не совпадающие (7-й подкласс 7-го класса по АГ)
-        for regex in lib.cls_7_vow:
-            if re.match('(.*)%s$' % regex, s_new):
-                s_new += 'СТИ'
-                ok = True
-
-        # 8-й класс (ГСРЯ)
-        for regex in lib.cls_8:
-            if re.match('(.*)%s$' % regex, s_new):
-                s_new = s_new[:-1]
-
-                # Чередование с нулём
-                if s_new in lib.cls_8_exc:
-                    s_new += lib.cls_8_exc[s_new]
-
-                s_new += 'ЧИ'
-                ok = True
-
-        # 9-й класс (ГСРЯ)
-        for regex in lib.cls_9:
-            if re.match('(.*)%s$' % regex, s_new):
-                s_new += 'ЕТИ'
-                ok = True
+        s_modif = past_stem_modif(s_new)
+        if s_new != s_modif:
+            s_new = s_modif
+            ok = True
 
         if not ok:
-            if s_new[-1] in lib.cons:
+            if s_new[-1] in lib.cons_sonor:
                 s_new += 'НУ'
 
             s_new += 'ТИ'

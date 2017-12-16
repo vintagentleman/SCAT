@@ -2,7 +2,7 @@ import re
 import lib
 from tools import replace_chars
 
-__all__ = ['adj', 'noun', 'num_pron_imp', 'pron_pers_refl', 'verb']
+__all__ = ['adj', 'noun', 'num_pron_imp', 'pron_pers_refl', 'part', 'verb']
 
 
 class Gram(object):
@@ -145,6 +145,9 @@ class Part(Gram):
             self.form = self.form[:-2]
             self.pos = self.pos[:-2]
 
+        if self.form.startswith('НЕ'):
+            self.form = self.form[2:]
+
         if self.form[-1] not in lib.vows:
             self.form += '`'
 
@@ -156,4 +159,4 @@ class Part(Gram):
         self.tense = t.ana[2]
         self.case = t.ana[3].split('/')[-1]
         self.num = t.ana[4].split('/')[-1]
-        self.gen = t.ana[4].split('/')[-1]
+        self.gen = t.ana[5].split('/')[-1]

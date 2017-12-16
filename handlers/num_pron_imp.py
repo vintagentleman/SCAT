@@ -158,7 +158,7 @@ def main(token):
 
         # Отмена палатализации
         if '*' in gr.nb:
-            s_new = tools.de_palat(s_new, gr.d_old, gr.d_new)
+            s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
 
         # Нахождение флексии
         if gr.pos == 'мест':

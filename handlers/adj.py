@@ -66,7 +66,7 @@ def main(token):
 
         # Отмена палатализации
         if '*' in gr.nb:
-            s_new = tools.de_palat(s_new, gr.d_old, gr.d_new)
+            s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
 
         # Прояснение/исчезновение редуцированных
         if (any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е'))
