@@ -4,14 +4,6 @@ import tools
 from handlers import Part, verb
 
 
-exc = {
-    '[ЕИ]М': 'ЯТИ',
-    'В[ОЪ]?Ш[+Е]Д': 'ВОИТИ',
-    '(?<=[%s])Ш[+Е]Д' % ''.join(lib.cons): 'ЫТИ',
-    'Ш[+Е]Д': 'ИТИ',
-}
-
-
 def act_past(gr):
     # Стемминг
     if gr.d_old != 'м':
@@ -23,39 +15,39 @@ def act_past(gr):
 
     if s_new != 'NONE':
         # Удаление словоизменительных суффиксов
-        if gr.d_old != 'м' and gr.case == 'им' and gr.num == 'ед' and gr.gen in ('м', 'ср'):
-            if s_new.endswith('В'):
-                s_new = s_new[:-1]
-        else:
-            mo = re.search('В?[ЪЬ]?Ш$', s_new)
-            if mo:
-                s_new = s_new[:-len(mo.group())]
+        if s_new.endswith('В'):
+            s_new = s_new[:-1]
+        elif re.search('В?[ЪЬ]?Ш$', s_new):
+            s_new = s_new[:-len(re.search('В?[ЪЬ]?Ш?$', s_new).group())]
 
         ok = False
 
         # Основы-исключения
-        for stem in exc:
-            po = re.compile('(.*)%s$' % stem)
-            mo = po.match(s_new)
+        for regex in lib.part_spec:
+            mo = re.match('(.*)%s$' % regex, s_new)
             if mo:
-                s_new = re.sub(po.pattern, mo.group(1) + exc[stem], s_new)
+                s_new = re.sub('(.*)%s$' % regex, mo.group(1) + lib.part_spec[regex], s_new)
                 ok = True
+                break
 
         # Проблемные классы
-        s_modif = verb.past_stem_modif(s_new, trim=True)
+        s_modif = verb.cls_cons_modif(s_new)
         if s_new != s_modif:
             s_new = s_modif
             ok = True
 
         if not ok:
-            # Палатализация
-            s_modif = tools.de_palat(s_modif, gr.pos)
+            s_modif = tools.de_palat(s_new, gr.pos)
+
+            # Вторая палатализация
             if s_new != s_modif:
                 s_new = s_modif + 'И'
-            elif s_new[-1] in lib.cons_sonor:
-                s_new += 'И'
-            elif s_new[-1] in lib.cons:
+            # 3*-й класс (4-й по АГ)
+            elif s_new[-1] in 'БГЗКПСХ' or s_new in ('ВЯ', 'СТЫ'):
                 s_new += 'НУ'
+            # Не пойми что
+            elif s_new[-1] in lib.cons:
+                s_new += 'И'
 
             s_new += 'ТИ'
 

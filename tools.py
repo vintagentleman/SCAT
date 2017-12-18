@@ -87,6 +87,7 @@ def find_stem(form, gram_comb, fl_dict):
 
 def de_palat(s, pos, d_pair=None):
 
+    # Для имён нам не важно, 1-я палатализация или 2-я
     if pos not in ('гл', 'прич'):
         if d_pair == ('jo', 'o'):
             if s[-1] == 'Ч':
@@ -95,18 +96,19 @@ def de_palat(s, pos, d_pair=None):
                 return s[:-1] + 'З'
 
         else:
-            if s[-1] in ('Ч', 'Ц', 'Т'):
+            if s[-1] in 'ЧЦТ':
                 return s[:-1] + 'К'
-            elif s[-1] in ('Ж', 'З'):
+            elif s[-1] in 'ЖЗ':
                 return s[:-1] + 'Г'
-            elif s[-1] in ('Ш', 'С'):
+            elif s[-1] in 'ШС':
                 return s[:-1] + 'Х'
 
     else:
-        if re.search('ШТ?$', s):
-            return re.sub('ШТ?$', 'Т', s)
-        elif re.search('ЖД?$', s):
-            return re.sub('ЖД?$', 'Д', s)
+        # Что делать с -ш- и -ж-?
+        if s.endswith('ШТ'):
+            return s[:-2] + 'Т'
+        elif s.endswith('ЖД'):
+            return s[:-2] + 'Д'
         elif re.search('[БВМПФ]Л$', s):
             return s[:-1]
 

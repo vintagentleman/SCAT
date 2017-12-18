@@ -145,7 +145,7 @@ class Part(Gram):
             self.form = self.form[:-2]
             self.pos = self.pos[:-2]
 
-        if self.form.startswith('НЕ'):
+        if re.match('НЕ(?!ДО)', self.form):
             self.form = self.form[2:]
 
         if self.form[-1] not in lib.vows:

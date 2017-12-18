@@ -4,27 +4,17 @@ import tools
 from handlers import Verb
 
 
-def past_stem_modif(s, trim=True):
-    # 7-й класс (ГСРЯ)
-
-    # Основы, совпадающие с инфинитивными (группа а) 2-го подкласса 6-го класса по АГ)
-    for regex in lib.cls_7_cons:
-        if re.match('(.*)%s$' % regex, s):
-            return s + 'ТИ'
-
-    # Исключения (с чередованием в основе)
-    for regex in lib.cls_7_cons_exc:
-        if re.match('(.*)%s$' % regex, s):
-            return re.sub('(.*)%s$' % regex, lib.cls_7_cons_exc[regex], s) + 'ТИ'
-
-    # Не совпадающие (7-й подкласс 7-го класса по АГ)
+def cls_cons_modif(s):
+    # 7-й класс (основы на гласный)
     for regex in lib.cls_7_vow:
-        if trim:
-            if re.match('(.*)%s$' % regex, s[:-1]):
-                return s[:-1] + 'СТИ'
-        else:
-            if re.match('(.*)%s$' % regex, s):
-                return s + 'СТИ'
+        if re.match('(.*)%s$' % regex, s):
+            return s + 'СТИ'
+
+    # 7-й класс (основы на согласный)
+    for regex in lib.cls_7_cons:
+        mo = re.match('(.*)%s$' % regex, s)
+        if mo:
+            return re.sub('(.*)%s$' % regex, mo.group(1) + lib.cls_7_cons[regex], s) + 'ТИ'
 
     # 8-й класс (ГСРЯ)
     for regex in lib.cls_8:
@@ -32,8 +22,10 @@ def past_stem_modif(s, trim=True):
             s = s[:-1]
 
             # Чередование с нулём
-            if s in lib.cls_8_exc:
-                s += lib.cls_8_exc[s]
+            if s == 'ТОЛ':
+                s += 'О'
+            elif s == 'Ж':
+                s += 'Е'
 
             return s + 'ЧИ'
 
@@ -55,18 +47,20 @@ def part_el(gr):
 
         ok = False
 
-        # Исключение (-я?)
+        # Исключение
         if re.match('(.*)Ш[+Е]$', s_new):
             s_new = re.sub('(.*)Ш[+Е]$', '\\1ИТИ', s_new)
             ok = True
-
-        s_modif = past_stem_modif(s_new)
-        if s_new != s_modif:
-            s_new = s_modif
-            ok = True
+        else:
+            # Проблемные классы
+            s_modif = cls_cons_modif(s_new)
+            if s_new != s_modif:
+                s_new = s_modif
+                ok = True
 
         if not ok:
-            if s_new[-1] in lib.cons_sonor:
+            # 3*-й класс (4-й по АГ)
+            if s_new[-1] in 'БГЗКПСХ' or s_new in ('ВЯ', 'СТЫ'):
                 s_new += 'НУ'
 
             s_new += 'ТИ'
