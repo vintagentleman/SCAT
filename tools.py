@@ -85,32 +85,60 @@ def find_stem(form, gram_comb, fl_dict):
     return stem
 
 
-def de_palat(s, pos, d_pair=None):
-
-    # Для имён нам не важно, 1-я палатализация или 2-я
+def de_palat(s, pos, pair=None):
+    # Для имён номер палатализации не имеет значения
     if pos not in ('гл', 'прич'):
-        if d_pair == ('jo', 'o'):
+
+        if pair == ('jo', 'o'):
             if s[-1] == 'Ч':
                 return s[:-1] + 'Ц'
             elif s[-1] == 'Ж':
                 return s[:-1] + 'З'
+            elif s[-1] == 'Ш':
+                return s[:-1] + 'С'
 
         else:
-            if s[-1] in 'ЧЦТ':
+            if s[-1] in 'ЧЦ' or s[-2:] == 'СТ':
                 return s[:-1] + 'К'
             elif s[-1] in 'ЖЗ':
                 return s[:-1] + 'Г'
             elif s[-1] in 'ШС':
                 return s[:-1] + 'Х'
 
+    # Для глаголов актуальна только вторая
     else:
-        # Что делать с -ш- и -ж-?
-        if s.endswith('ШТ'):
-            return s[:-2] + 'Т'
-        elif s.endswith('ЖД'):
-            return s[:-2] + 'Д'
-        elif re.search('[БВМПФ]Л$', s):
-            return s[:-1]
+        if s[-1] == 'Ч':
+            return s[:-1] + 'К'
+        elif s[-1] == 'Ж':
+            return s[:-1] + 'Г'
+        elif s[-1] == 'Ш':
+            return s[:-1] + 'Х'
+
+    return s
+
+
+def de_jot(s):
+
+    if s.endswith(('БЛ', 'ВЛ', 'МЛ', 'ПЛ', 'ФЛ')):
+        return s[:-1]
+
+    # elif s.endswith(('Ж', 'ЖД')):
+    #     debut = s[:-len(re.search('ЖД?$', s).group())]
+    #
+    #     for fin in ('ЗД', 'Д', 'З'):
+    #         if debut + fin in lib.cnj_2_jot:
+    #             return debut + fin
+    #
+    # elif s.endswith(('Ч', 'ШТ', 'Щ')):
+    #     debut = s[:-len(re.search('(Ч|ШТ|Щ)$', s).group())]
+    #
+    #     for fin in ('СТ', 'Т'):
+    #         if debut + fin in lib.cnj_2_jot:
+    #             return debut + fin
+    #
+    # elif s.endswith('Ш'):
+    #     if s[:-1] + 'С' in lib.cnj_2_jot:
+    #         return s[:-1] + 'С'
 
     return s
 

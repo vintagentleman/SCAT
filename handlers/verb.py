@@ -8,15 +8,15 @@ def cls_cons_modif(s):
     # 7-й класс (основы на гласный)
     for regex in lib.cls_7_vow:
         if re.match('(.*)%s$' % regex, s):
-            return s + 'СТИ'
+            return s, 'СТИ'
 
     # 7-й класс (основы на согласный)
     for regex in lib.cls_7_cons:
         mo = re.match('(.*)%s$' % regex, s)
         if mo:
-            return re.sub('(.*)%s$' % regex, mo.group(1) + lib.cls_7_cons[regex], s) + 'ТИ'
+            return re.sub('(.*)%s$' % regex, mo.group(1) + lib.cls_7_cons[regex], s), 'ТИ'
 
-    # 8-й класс (ГСРЯ)
+    # 8-й класс
     for regex in lib.cls_8:
         if re.match('(.*)%s$' % regex, s):
             s = s[:-1]
@@ -27,13 +27,13 @@ def cls_cons_modif(s):
             elif s == 'Ж':
                 s += 'Е'
 
-            return s + 'ЧИ'
+            return s, 'ЩИ'
 
-    # 9-й класс (ГСРЯ)
+    # 9-й класс
     if re.match('(.*)[МПТ][+Е]Р$', s):
-        return s + 'ЕТИ'
+        return s, 'ЕТИ'
 
-    return s
+    return s, ''
 
 
 def part_el(gr):
@@ -45,39 +45,39 @@ def part_el(gr):
         if s_new.endswith('Л'):
             s_new = s_new[:-1]
 
-        ok = False
+        # Основы-исключения
+        for regex in lib.part_el_spec:
+            mo = re.match(regex, s_new)
+            if mo:
+                s_modif = re.sub(regex, mo.group(1) + lib.part_el_spec[regex][0], s_new)
+                if s_new != s_modif:
+                    return (s_old, s_modif), lib.part_el_spec[regex][1]
 
-        # Исключение
-        if re.match('(.*)Ш[+Е]$', s_new):
-            s_new = re.sub('(.*)Ш[+Е]$', '\\1ИТИ', s_new)
-            ok = True
-        else:
-            # Проблемные классы
-            s_modif = cls_cons_modif(s_new)
-            if s_new != s_modif:
-                s_new = s_modif
-                ok = True
+        # Проблемные классы
+        s_modif, infl = cls_cons_modif(s_new)
+        if infl:
+            return (s_old, s_modif), infl
 
-        if not ok:
-            # 3*-й класс (4-й по АГ)
-            if s_new[-1] in 'БГЗКПСХ' or s_new in ('ВЯ', 'СТЫ'):
-                s_new += 'НУ'
+        # 3*-й класс
+        if s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
+            s_new += 'НУ'
 
-            s_new += 'ТИ'
+        infl = 'ТИ'
 
-        if gr.refl:
-            s_new += 'СЯ'
+    else:
+        infl = ''
 
-    return (s_old, s_new), ''
+    return (s_old, s_new), infl
 
 
 def main(token):
     gr = Verb(token)
+    stem, fl = ('', ''), ''
 
     if gr.mood == 'изъяв':
         # Простые времена
         if gr.tense == 'прош':
-            return part_el(gr)
+            stem, fl = part_el(gr)
 
         # Сложные времена
         if re.match('перф|плюскв|буд ?[12]', gr.tense):
@@ -89,12 +89,15 @@ def main(token):
             elif gr.role == 'инф':
                 return ('', gr.form), ''
             elif gr.role.startswith('пр'):
-                return part_el(gr)
+                stem, fl = part_el(gr)
 
     elif gr.mood == 'сосл':
         if gr.role == 'св':
             return ('', 'AUX-SBJ'), ''
         elif gr.role.startswith('пр'):
-            return part_el(gr)
+            stem, fl = part_el(gr)
 
-    return ('', ''), ''
+    if stem[1] != 'NONE' and gr.refl:
+        fl += 'СЯ'
+
+    return stem, fl

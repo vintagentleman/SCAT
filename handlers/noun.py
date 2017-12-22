@@ -151,7 +151,7 @@ def main(token):
     # Проверка на исключительность
     for key in lib.noun_spec:
         if re.match(key, gr.form):
-            return ('', lib.noun_spec[key]), ''
+            return ('', lib.noun_spec[key][0]), lib.noun_spec[key][1]
 
     # Стемминг (с учётом особого смешения)
     if gr.d_new in ('a', 'ja', 'i') and gr.gen == 'ср':

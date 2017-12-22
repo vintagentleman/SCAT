@@ -15,57 +15,98 @@ def act_past(gr):
 
     if s_new != 'NONE':
         # Удаление словоизменительных суффиксов
-        if s_new.endswith('В'):
-            s_new = s_new[:-1]
-        elif re.search('В?[ЪЬ]?Ш$', s_new):
-            s_new = s_new[:-len(re.search('В?[ЪЬ]?Ш?$', s_new).group())]
-
-        ok = False
+        suff = re.search('В$|В?[ЪЬ]?Ш$', s_new)
+        if suff:
+            s_new = s_new[:-len(suff.group())]
 
         # Основы-исключения
         for regex in lib.part_spec:
-            mo = re.match('(.*)%s$' % regex, s_new)
+            mo = re.match(regex, s_new)
             if mo:
-                s_new = re.sub('(.*)%s$' % regex, mo.group(1) + lib.part_spec[regex], s_new)
-                ok = True
-                break
+                s_modif = re.sub(regex, mo.group(1) + lib.part_spec[regex][0], s_new)
+                if s_new != s_modif:
+                    return (s_old, s_modif), lib.part_spec[regex][1]
 
         # Проблемные классы
-        s_modif = verb.cls_cons_modif(s_new)
-        if s_new != s_modif:
-            s_new = s_modif
-            ok = True
+        s_modif, infl = verb.cls_cons_modif(s_new)
+        if infl:
+            return (s_old, s_modif), infl
 
-        if not ok:
-            s_modif = tools.de_palat(s_new, gr.pos)
+        jot = bool(s_new.endswith(tuple('ЛНРЖЧШЩ')) or s_new.endswith(('ЖД', 'ШТ')))
 
-            # Вторая палатализация
-            if s_new != s_modif:
-                s_new = s_modif + 'И'
-            # 3*-й класс (4-й по АГ)
-            elif s_new[-1] in 'БГЗКПСХ' or s_new in ('ВЯ', 'СТЫ'):
-                s_new += 'НУ'
-            # Не пойми что
-            elif s_new[-1] in lib.cons:
-                s_new += 'И'
+        # Сочетания с йотом
+        if jot:
+            s_new = tools.de_jot(s_new) + 'И'
+        # 3*-й класс
+        elif s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
+            s_new += 'НУ'
 
-            s_new += 'ТИ'
+        infl = 'ТИ'
 
-        if gr.refl:
-            s_new += 'СЯ'
+    else:
+        infl = ''
+
+    return (s_old, s_new), infl
+
+
+def pas_past(gr):
+    # Стемминг
+    if gr.d_old != 'тв':
+        s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, gr.gen), lib.nom_infl)
+    else:
+        s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, gr.gen), lib.pron_infl)
+
+    s_new = s_old
+
+    if s_new != 'NONE':
+        # Удаление словоизменительных суффиксов
+        suff = re.search('Е?Н?Н$|Т$', s_new)
+        if suff:
+            s_new = s_new[:-len(suff.group())]
+
+        # Основы-исключения
+        for regex in lib.part_spec:
+            mo = re.match(regex, s_new)
+            if mo:
+                s_modif = re.sub(regex, mo.group(1) + lib.part_spec[regex][0], s_new)
+                if s_new != s_modif:
+                    return (s_old, s_modif), lib.part_spec[regex][1]
+
+        # Проблемные классы
+        s_modif, infl = verb.cls_cons_modif(tools.de_palat(s_new, gr.pos))
+        if infl:
+            return (s_old, s_modif), infl
+
+        jot = bool(s_new.endswith(tuple('ЛНРЖЧШЩ')) or s_new.endswith(('ЖД', 'ШТ')))
+
+        # Сочетания с йотом
+        if jot:
+            s_new = tools.de_jot(s_new) + 'И'
+        # TODO -ЪВ- (-ОВ-) // -Ы-
+        elif suff and suff.group().startswith('ЕН'):
+            s_new += 'И'
+        # 3*-й класс
+        elif s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
+            s_new += 'НУ'
+
+        s_new += 'ТИ'
 
     return (s_old, s_new), ''
 
 
 def main(token):
     gr = Part(token)
+    stem, fl = ('', ''), ''
 
     if gr.tense == 'прош':
         # Страдательные
         if gr.d_old in ('a', 'o', 'тв'):
-            pass
+            stem, fl = pas_past(gr)
         # Действительные
         else:
-            return act_past(gr)
+            stem, fl = act_past(gr)
 
-    return ('', ''), ''
+    if stem[1] != 'NONE' and gr.refl:
+        fl += 'СЯ'
+
+    return stem, fl
