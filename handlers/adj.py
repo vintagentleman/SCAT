@@ -42,37 +42,36 @@ def main(token):
 
     s_new = s_old
 
-    if s_new != 'NONE':
-        # Суффиксы сравнительной степени
-        if gr.pos == 'прил/ср':
-            s_new = de_comp_suff(s_new, gr.case, gr.num, gr.gen)
+    if s_new == 'NONE':
+        return ('', 'NONE'), ''
 
-        # Плюс-минус
-        s_new = tools.plus_minus(s_new, gr.nb)
+    # Суффиксы сравнительной степени
+    if gr.pos == 'прил/ср':
+        s_new = de_comp_suff(s_new, gr.case, gr.num, gr.gen)
 
-        # Отмена палатализации
-        if '*' in gr.nb:
-            s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
+    # Плюс-минус
+    s_new = tools.plus_minus(s_new, gr.nb)
 
-        # Удаление редуцированных в конечном слоге основы (всегда слабом)
-        if (any(tag in gr.nb for tag in ('-о', '-е')) or s_new.endswith('ЕН')
-                and tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
-            s_new = s_new[:-2] + s_new[-1]
+    # Отмена палатализации
+    if '*' in gr.nb:
+        s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
 
-        # TODO: заменить минус в '-о' и '-е' на плюс и внести в разметку (в таком случае не удалять)
+    # Удаление редуцированных в конечном слоге основы (всегда слабом)
+    if (any(tag in gr.nb for tag in ('-о', '-е')) or s_new.endswith('ЕН')
+            and tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
+        s_new = s_new[:-2] + s_new[-1]
 
-        # Возвращение маркера одушевлённости
-        if gr.prop:
-            s_old = '*' + s_old
-            s_new = '*' + s_new
+    # TODO: заменить минус в '-о' и '-е' на плюс и внести в разметку (в таком случае не удалять)
 
-        # Нахождение флексии
-        if gr.prop and gr.d_old not in ('м', 'тв'):
-            infl = noun_infl(s_new, gr.pt, gr.d_old, gr.gen)
-        else:
-            infl = adj_pron_infl(s_new, gr.d_old)
+    # Возвращение маркера одушевлённости
+    if gr.prop:
+        s_old = '*' + s_old
+        s_new = '*' + s_new
 
+    # Нахождение флексии
+    if gr.prop and gr.d_old not in ('м', 'тв'):
+        infl = noun_infl(s_new, gr.pt, gr.d_old, gr.gen)
     else:
-        infl = ''
+        infl = adj_pron_infl(s_new, gr.d_old)
 
     return (s_old, s_new), infl

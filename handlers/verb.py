@@ -41,33 +41,30 @@ def part_el(gr):
     s_old = tools.find_stem(gr.form, (gr.gen, gr.num), lib.part_el_infl)
     s_new = s_old
 
-    if s_new != 'NONE':
-        if s_new.endswith('Л'):
-            s_new = s_new[:-1]
+    if s_new == 'NONE':
+        return ('', 'NONE'), ''
 
-        # Основы-исключения
-        for regex in lib.part_el_spec:
-            mo = re.match(regex, s_new)
-            if mo:
-                s_modif = re.sub(regex, mo.group(1) + lib.part_el_spec[regex][0], s_new)
-                if s_new != s_modif:
-                    return (s_old, s_modif), lib.part_el_spec[regex][1]
+    if s_new.endswith('Л'):
+        s_new = s_new[:-1]
 
-        # Проблемные классы
-        s_modif, infl = cls_cons_modif(s_new)
-        if infl:
-            return (s_old, s_modif), infl
+    # Основы-исключения
+    for regex in lib.part_el_spec:
+        mo = re.match(regex, s_new)
+        if mo:
+            s_modif = re.sub(regex, mo.group(1) + lib.part_el_spec[regex][0], s_new)
+            if s_new != s_modif:
+                return (s_old, s_modif), lib.part_el_spec[regex][1]
 
-        # 3*-й класс
-        if s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
-            s_new += 'НУ'
+    # Проблемные классы
+    s_modif, infl = cls_cons_modif(s_new)
+    if infl:
+        return (s_old, s_modif), infl
 
-        infl = 'ТИ'
+    # 3*-й класс
+    if s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
+        s_new += 'НУ'
 
-    else:
-        infl = ''
-
-    return (s_old, s_new), infl
+    return (s_old, s_new), 'ТИ'
 
 
 def main(token):
@@ -97,7 +94,8 @@ def main(token):
         elif gr.role.startswith('пр'):
             stem, fl = part_el(gr)
 
-    if stem[1] != 'NONE' and gr.refl:
+    # Убрать, когда закончим со всеми временами
+    if stem[1] not in ('', 'NONE') and gr.refl:
         fl += 'СЯ'
 
     return stem, fl

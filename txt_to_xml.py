@@ -5,36 +5,6 @@ import tools
 from handlers import *
 
 
-def count_chars(string, num=-1):
-
-    def skip_chars(s, start):
-
-        if s[start] == '<':
-            start += len(re.search(r'(<.+?>)', s[start:]).group(1))
-        elif s[start] == '&':
-            start += len(re.search(r'(&.+?;)', s[start:]).group(1)) - 1
-
-        if s[start] in '<&':
-            start = skip_chars(s, start)
-
-        return start
-
-    if num > -1:
-        result = 0
-        result = skip_chars(string, result)
-
-        for i in range(num):
-            result += 1
-            result = skip_chars(string, result)
-
-        return result
-
-    string = re.sub(r'<.+?>', '', string)
-    string = re.sub(r'&.+?;', 'S', string)
-
-    return len(string)
-
-
 class Token(object):
 
     def get_orig(self):
@@ -61,10 +31,10 @@ class Token(object):
         if '#' in s:
             s = s.replace('#', '')
 
-            if count_chars(s) > 1:
-                s = s[:count_chars(s, 1) + 1] + '҃' + s[count_chars(s, 1) + 1:]
+            if tools.count_chars(s) > 1:
+                s = s[:tools.count_chars(s, 1) + 1] + '҃' + s[tools.count_chars(s, 1) + 1:]
             else:
-                s = s[:count_chars(s, 0) + 1] + '҃' + s[count_chars(s, 0) + 1:]
+                s = s[:tools.count_chars(s, 0) + 1] + '҃' + s[tools.count_chars(s, 0) + 1:]
 
         s = s.lower()
         s = s.replace('ѡⷮ', 'ѿ')
@@ -202,12 +172,12 @@ class Token(object):
             if self.ana[0].startswith('прич'):
                 # self.stem - кортеж из основы до и после модификаций
                 self.stem, self.fl = self.get_gram_data()
-                if self.stem[1]:
+                if self.stem[1] or self.fl:
                     self.lemma = self.stem[1] + self.fl
 
     def __repr__(self):
         result = '<w xml:id="%s"' % self.token_id
-        # Надо привести грамматику к формату TEI. Но как быть с индексами (плюс-минус)?
+        # TODO: привести грамматику к формату TEI. Но как быть с индексами (плюс-минус)?
         if hasattr(self, 'ana') and not self.ana[0].isnumeric():
             result += ' ana="%s"' % ';'.join(item for item in self.ana if item)
         if hasattr(self, 'lemma'):

@@ -148,31 +148,30 @@ def main(token):
 
     s_new = s_old
 
-    if s_new != 'NONE':
-        # Модификация основы
-        if gr.pos == 'мест':
-            s_new = pron_modif(s_new)
+    if s_new == 'NONE':
+        return ('', 'NONE'), ''
 
-        # Плюс-минус
-        s_new = tools.plus_minus(s_new, gr.nb)
+    # Модификация основы
+    if gr.pos == 'мест':
+        s_new = pron_modif(s_new)
 
-        # Отмена палатализации
-        if '*' in gr.nb:
-            s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
+    # Плюс-минус
+    s_new = tools.plus_minus(s_new, gr.nb)
 
-        # Нахождение флексии
-        if gr.pos == 'мест':
-            if s_new not in ('К', 'КОТОР'):
-                infl = pron_infl(s_new, gr.d_old)
-            else:
-                infl = pron_adj_infl(s_new)
+    # Отмена палатализации
+    if '*' in gr.nb:
+        s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
+
+    # Нахождение флексии
+    if gr.pos == 'мест':
+        if s_new not in ('К', 'КОТОР'):
+            infl = pron_infl(s_new, gr.d_old)
         else:
-            infl = num_infl(s_new, gr.d_old, gr.gen)
-
+            infl = pron_adj_infl(s_new)
     else:
-        infl = ''
+        infl = num_infl(s_new, gr.d_old, gr.gen)
 
-    if s_new != 'NONE' and gr.pos == 'мест':
+    if gr.pos == 'мест':
         if gr.zhe:
             infl += 'ЖЕ'
 

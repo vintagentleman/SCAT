@@ -2,6 +2,7 @@ import re
 import lib
 from tools import replace_chars
 
+
 __all__ = ['adj', 'noun', 'num_pron_imp', 'pron_pers_refl', 'part', 'verb']
 
 

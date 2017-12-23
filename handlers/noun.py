@@ -167,32 +167,31 @@ def main(token):
         s_new = tools.find_stem(s_new, (gr.d_new, gr.case, gr.num, gr.gen), lib.nom_infl)
 
     # Обработка основы
-    if s_new != 'NONE':
-        # Модификации по типам склонения и другие
-        s_new = decl_spec_modif(s_new, gr.d_old, gr.d_new, gr.nb)
+    if s_new == 'NONE':
+        return ('', 'NONE'), ''
 
-        # Отмена палатализации
-        if '*' in gr.nb:
-            s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
+    # Модификации по типам склонения и другие
+    s_new = decl_spec_modif(s_new, gr.d_old, gr.d_new, gr.nb)
 
-        # Прояснение/исчезновение редуцированных
-        if (any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е'))
-                or tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
-            s_new = tools.de_reduce(s_new, gr.d_old, gr.nb)
+    # Отмена палатализации
+    if '*' in gr.nb:
+        s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
 
-        # 'НОВЪ' --> 'НОВГОРОДЪ'; 'ЦАРЬ' --> 'ЦАРГРАДЪ' (?)
-        if grd:
-            s_new += grd
+    # Прояснение/исчезновение редуцированных
+    if (any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е'))
+            or tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
+        s_new = tools.de_reduce(s_new, gr.d_old, gr.nb)
 
-        # Возвращение маркера одушевлённости
-        if gr.prop:
-            s_old = '*' + s_old
-            s_new = '*' + s_new
+    # 'НОВЪ' --> 'НОВГОРОДЪ'; 'ЦАРЬ' --> 'ЦАРГРАДЪ' (?)
+    if grd:
+        s_new += grd
 
-        # Нахождение флексии
-        infl = noun_infl(s_new, gr.pt, gr.d_old, gr.gen)
+    # Возвращение маркера одушевлённости
+    if gr.prop:
+        s_old = '*' + s_old
+        s_new = '*' + s_new
 
-    else:
-        infl = ''
+    # Нахождение флексии
+    infl = noun_infl(s_new, gr.pt, gr.d_old, gr.gen)
 
     return (s_old, s_new), infl
