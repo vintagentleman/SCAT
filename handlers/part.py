@@ -63,14 +63,6 @@ def pas_past(gr):
     if suff:
         s_new = s_new[:-len(suff.group())]
 
-    # Основы-исключения
-    for regex in lib.part_spec:
-        mo = re.match(regex, s_new)
-        if mo:
-            s_modif = re.sub(regex, mo.group(1) + lib.part_spec[regex][0], s_new)
-            if s_new != s_modif:
-                return (s_old, s_modif), lib.part_spec[regex][1]
-
     # Проблемные классы
     s_modif, infl = verb.cls_cons_modif(tools.de_palat(s_new, gr.pos))
     if infl:

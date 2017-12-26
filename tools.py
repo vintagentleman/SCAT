@@ -152,23 +152,26 @@ def de_jot(s):
     if s.endswith(('БЛ', 'ВЛ', 'МЛ', 'ПЛ', 'ФЛ')):
         return s[:-1]
 
-    # elif s.endswith(('Ж', 'ЖД')):
-    #     debut = s[:-len(re.search('ЖД?$', s).group())]
-    #
-    #     for fin in ('ЗД', 'Д', 'З'):
-    #         if debut + fin in lib.cnj_2_jot:
-    #             return debut + fin
-    #
-    # elif s.endswith(('Ч', 'ШТ', 'Щ')):
-    #     debut = s[:-len(re.search('(Ч|ШТ|Щ)$', s).group())]
-    #
-    #     for fin in ('СТ', 'Т'):
-    #         if debut + fin in lib.cnj_2_jot:
-    #             return debut + fin
-    #
-    # elif s.endswith('Ш'):
-    #     if s[:-1] + 'С' in lib.cnj_2_jot:
-    #         return s[:-1] + 'С'
+    elif s.endswith(('Ж', 'ЖД')):
+        debut = s[:-len(re.search('ЖД?$', s).group())]
+
+        for fin in ('Д', 'З', 'ЗД'):
+            for regex in lib.cnj_2_zh:
+                if re.search(regex + '$', debut + fin):
+                    return debut + fin
+
+    elif s.endswith(('Ч', 'Щ', 'ШТ')):
+        debut = s[:-len(re.search('(Ч|Щ|ШТ)$', s).group())]
+
+        for fin in ('Т', 'СТ'):
+            for regex in lib.cnj_2_tsch:
+                if re.search(regex + '$', debut + fin):
+                    return debut + fin
+
+    elif s.endswith('Ш'):
+        for regex in lib.cnj_2_sch:
+            if re.search(regex + '$', s[:-1] + 'С'):
+                return s[:-1] + 'С'
 
     return s
 
