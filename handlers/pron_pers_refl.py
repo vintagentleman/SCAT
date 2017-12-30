@@ -8,12 +8,12 @@ def main(token):
     stem = 'NONE'
 
     if gr.pers != 'возвр':
-        for key in lib.pron_pers:
-            if re.match(key[0], gr.form) and (gr.pers, gr.case, gr.num) == key[1]:
-                stem = lib.pron_pers[key]
+        if (gr.pers, gr.case, gr.num) in lib.pron_pers:
+            if re.match(lib.pron_pers[(gr.pers, gr.case, gr.num)][0], gr.form):
+                stem = lib.pron_pers[(gr.pers, gr.case, gr.num)][1]
     else:
-        for key in lib.pron_refl:
-            if re.match(key[0], gr.form) and gr.case == key[1]:
-                stem = lib.pron_refl[key]
+        if gr.case in lib.pron_refl:
+            if re.match(lib.pron_refl[gr.case][0], gr.form):
+                stem = lib.pron_refl[gr.case][1]
 
     return ('', stem), ''

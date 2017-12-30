@@ -7,28 +7,30 @@ from handlers.noun import noun_infl
 
 def pron_modif(s):
 
-    x = re.match('([ВН])[ЪЬ]?Ш', s)
-    if x:
-        return '%sАШ' % x.group(1)
-
-    elif re.match('В[ЪЬ]?С$', s):
+    if re.match('В[ЪЬ]?С$', s):
         return 'ВЕС'
 
-    # 'КИИ' // 'КОЕГО'
+    elif re.match('В[ЪЬ]?Ш$', s):
+        return 'ВАШ'
+
+    elif re.match('Н[ЪЬ]?Ш$', s):
+        return 'НАШ'
+
+    elif re.match('(М|[ТС]В?)$', s):
+        # Чередование `СИИ' // `СЕГО'
+        if s == 'С':
+            return s + 'Е'
+        # Реинтерпретация морфемных границ
+        else:
+            return s + 'О'
+
+    # Чередование `КИИ' // `КОЕГО'
     elif s == 'КО':
         return 'К'
 
-    # Предложные формы местоимения 'И'
+    # Предложные формы местоимения `И'
     elif s == 'Н':
         return ''
-
-    # Морфемная реинтерпретация
-    elif s in ('М', 'Т', 'ТВ', 'СВ'):
-        return s + 'О'
-
-    # 'СИИ' // 'СЕГО'
-    elif s == 'С':
-        return s + 'Е'
 
     return s
 
@@ -48,14 +50,6 @@ def pron_infl(s, decl):
             return 'Ь'
         else:
             return 'Ъ'
-
-
-def pron_adj_infl(s):
-
-    if s.endswith(lib.cons_palat):
-        return 'ИИ'
-    else:
-        return 'ЫИ'
 
 
 def num_infl(s, decl, gen):
@@ -81,6 +75,26 @@ def num_infl(s, decl, gen):
             return noun_infl(s, False, decl, gen)
 
 
+def neg(s, gr):
+
+    if gr.neg:
+        return gr.neg.group() + s
+
+    # Префикс тут отсечён предлогом
+    elif s in ('КТО', 'ЧТО') and gr.zhe:
+        return 'НИ' + s
+
+    return s
+
+
+def zhe(i, gr):
+
+    if gr.zhe:
+        return i + 'ЖЕ'
+
+    return i
+
+
 def main(token):
     gr = Nom(token)
 
@@ -90,9 +104,10 @@ def main(token):
             return ('', 'КОЖДО'), ''
 
         # Проверка на вопросительность
-        for key in lib.pron_interr:
-            if re.match(key[0], gr.form) and (gr.d_old, gr.case) == key[1]:
-                return ('', lib.pron_interr[key]), ''
+        if (gr.d_old, gr.case) in lib.pron_interr:
+            if re.match(lib.pron_interr[(gr.d_old, gr.case)][0], gr.form):
+                return ('', neg(lib.pron_interr[(gr.d_old, gr.case)][1], gr)), zhe('', gr)
+
     else:
         # Проверка на изменяемость обеих частей
         for key in lib.num_spec:
@@ -164,22 +179,13 @@ def main(token):
 
     # Нахождение флексии
     if gr.pos == 'мест':
-        if s_new not in ('К', 'КОТОР'):
-            infl = pron_infl(s_new, gr.d_old)
+        for regex in lib.pron_spec:
+            if re.match(regex + '$', s_new):
+                infl = lib.pron_spec[regex]
+                break
         else:
-            infl = pron_adj_infl(s_new)
+            infl = pron_infl(s_new, gr.d_old)
     else:
         infl = num_infl(s_new, gr.d_old, gr.gen)
 
-    if gr.pos == 'мест':
-        if gr.zhe:
-            infl += 'ЖЕ'
-
-        if gr.neg:
-            s_new = gr.neg.group() + s_new
-
-        # Префикс НИ- тут отсечён предлогом
-        if s_new in ('КТО', 'ЧТО') and gr.zhe:
-            s_new = 'НИ' + s_new
-
-    return (s_old, s_new), infl
+    return (s_old, neg(s_new, gr)), zhe(infl, gr)
