@@ -1,6 +1,7 @@
 */
 !data/
 !handlers/
+/*.csv
 /*.txt
 *.bak
 *.dat
