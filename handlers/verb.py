@@ -36,38 +36,6 @@ def cls_cons_modif(s):
     return s, ''
 
 
-def aor_simp(gr):
-    # Стемминг
-    s_old = tools.find_stem(gr.form, (gr.pers, gr.num), lib.aor_simp_infl)
-    s_new = s_old
-
-    if s_new == 'NONE':
-        return ('', 'NONE'), ''
-
-    # Основы-исключения
-    if s_new.endswith(('ИД', 'ЫД')):
-        s_new = s_new[:-2]
-
-        if s_new.endswith(lib.cons):
-            s_new += 'Ы'
-        else:
-            s_new += 'И'
-
-    # Отмена палатализации
-    s_new = tools.de_palat(s_new, gr.pos)
-
-    # Проблемные классы
-    s_modif, infl = cls_cons_modif(s_new)
-    if infl:
-        return (s_old, s_modif), infl
-
-    # 3*-й класс
-    if s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
-        s_new += 'НУ'
-
-    return (s_old, s_new), 'ТИ'
-
-
 def part_el(gr):
     # Стемминг
     s_old = tools.find_stem(gr.form, (gr.gen, gr.num), lib.part_el_infl)
@@ -99,6 +67,80 @@ def part_el(gr):
     return (s_old, s_new), 'ТИ'
 
 
+def aor_simp(gr):
+    # Стемминг
+    s_old = tools.find_stem(gr.form, (gr.pers, gr.num), lib.aor_simp_infl)
+    s_new = s_old
+
+    if s_new == 'NONE':
+        return ('', 'NONE'), ''
+
+    # Основы-исключения (настоящего времени)
+    if s_new.endswith(('ДАД', 'ЖИВ', 'ИД', 'ЫД')):
+        s_new = s_new[:-1]
+
+    # Отмена палатализации
+    s_new = tools.de_palat(s_new, gr.pos)
+
+    # Проблемные классы
+    s_modif, infl = cls_cons_modif(s_new)
+    if infl:
+        return (s_old, s_modif), infl
+
+    # 3*-й класс
+    if s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
+        s_new += 'НУ'
+
+    return (s_old, s_new), 'ТИ'
+
+
+def aor_sigm(gr):
+    # Простейший случай
+    if gr.tense == 'аор гл' and gr.pers in ('2', '3') and gr.num == 'ед':
+        mo = re.search('С?Т[ЪЬ`]$', gr.form)
+        if mo:
+            return (gr.form, gr.form[:-len(mo.group())]), 'ТИ'
+        else:
+            return (gr.form, gr.form), 'ТИ'
+
+    # Стемминг
+    s_old = tools.find_stem(gr.form, (gr.pers, gr.num), lib.aor_sigm_infl)
+    # Осложнение тематического суффикса
+    if gr.tense == 'аор нов' and s_old.endswith('О'):
+        s_old = s_old[:-1]
+
+    s_new = s_old
+
+    if s_new == 'NONE':
+        return ('', 'NONE'), ''
+    elif gr.tense == 'аор гл':
+        return (s_old, s_new), 'ТИ'
+
+    # Основы-исключения (настоящего времени)
+    if s_new.endswith(('ДАД', 'ЖИВ', 'ИД', 'ЫД')):
+        s_new = s_new[:-1]
+
+    if gr.tense == 'аор сигм':
+        # Удлинение корневого гласного
+        if s_new[-1] == '+':
+            s_new = s_new[:-1] + 'Е'
+
+        # На рассматриваемом материале лексема одна-единственная
+        if s_new == 'РЕ':
+            return (s_old, s_new), 'ЩИ'
+
+    # Проблемные классы
+    s_modif, infl = cls_cons_modif(s_new)
+    if infl:
+        return (s_old, s_modif), infl
+
+    # 3*-й класс
+    if s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
+        s_new += 'НУ'
+
+    return (s_old, s_new), 'ТИ'
+
+
 def main(token):
     gr = Verb(token)
     stem, fl = ('', ''), ''
@@ -109,8 +151,18 @@ def main(token):
             stem, fl = part_el(gr)
         elif gr.tense == 'аор пр':
             stem, fl = aor_simp(gr)
-        # elif gr.tense.startswith('аор'):
-        #     stem, fl = aor_sigm(gr)
+        elif gr.tense.startswith('аор'):
+            stem, fl = aor_sigm(gr)
+
+        elif gr.tense == 'а/имп':
+            # Тут лексема по факту одна-единственная
+            if gr.pers in ('2', '3') and gr.num == 'ед':
+                s_old = gr.form
+            else:
+                s_old = tools.find_stem(gr.form, (gr.pers, gr.num), lib.aor_sigm_infl)
+
+            if s_old != 'NONE':
+                stem, fl = (s_old, 'БЫ'), 'ТИ'
 
         # Сложные времена
         elif re.match('перф|плюскв|буд ?[12]', gr.tense):

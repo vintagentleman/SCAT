@@ -169,7 +169,7 @@ class Token(object):
         # Отбрасываем пустые строки и цифирь
         if hasattr(self, 'ana') and self.ana[0] and not self.ana[0].isnumeric():
             # if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
-            if self.ana[0].startswith('гл') and self.ana[2] == 'аор пр':
+            if self.ana[0].startswith('гл') and self.ana[2].startswith('а'):
                 # self.stem - кортеж из основы до и после модификаций
                 self.stem, self.fl = self.get_gram_data()
                 if self.stem[1] or self.fl:

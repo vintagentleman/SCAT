@@ -110,7 +110,7 @@ class Verb(Gram):
                 self.pers = ''
                 self.gen = t.ana[3]
 
-            self.num = t.ana[4]
+            self.num = t.ana[4].split('/')[-1]
 
             if t.ana[5].isnumeric():
                 self.role = ''
@@ -127,7 +127,7 @@ class Verb(Gram):
                 self.pers = ''
                 self.gen = t.ana[2]
 
-            self.num = t.ana[3]
+            self.num = t.ana[3].split('/')[-1]
             self.role = t.ana[4]
 
         elif self.mood == 'повел':
