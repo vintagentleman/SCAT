@@ -25,9 +25,9 @@ def act_past(gr):
     for regex in lib.part_spec:
         mo = re.match(regex, s_new)
         if mo:
-            s_modif = re.sub(regex, mo.group(1) + lib.part_spec[regex][0], s_new)
+            s_modif = re.sub(regex, mo.group(1) + lib.part_spec[regex], s_new)
             if s_new != s_modif:
-                return (s_old, s_modif), lib.part_spec[regex][1]
+                return (s_old, s_modif), 'ТИ'
 
     # Проблемные классы
     s_modif, infl = verb.cls_cons_modif(s_new)

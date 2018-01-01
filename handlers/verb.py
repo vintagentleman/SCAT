@@ -36,6 +36,38 @@ def cls_cons_modif(s):
     return s, ''
 
 
+def aor_simp(gr):
+    # Стемминг
+    s_old = tools.find_stem(gr.form, (gr.pers, gr.num), lib.aor_simp_infl)
+    s_new = s_old
+
+    if s_new == 'NONE':
+        return ('', 'NONE'), ''
+
+    # Основы-исключения
+    if s_new.endswith(('ИД', 'ЫД')):
+        s_new = s_new[:-2]
+
+        if s_new.endswith(lib.cons):
+            s_new += 'Ы'
+        else:
+            s_new += 'И'
+
+    # Отмена палатализации
+    s_new = tools.de_palat(s_new, gr.pos)
+
+    # Проблемные классы
+    s_modif, infl = cls_cons_modif(s_new)
+    if infl:
+        return (s_old, s_modif), infl
+
+    # 3*-й класс
+    if s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
+        s_new += 'НУ'
+
+    return (s_old, s_new), 'ТИ'
+
+
 def part_el(gr):
     # Стемминг
     s_old = tools.find_stem(gr.form, (gr.gen, gr.num), lib.part_el_infl)
@@ -51,9 +83,9 @@ def part_el(gr):
     for regex in lib.part_el_spec:
         mo = re.match(regex, s_new)
         if mo:
-            s_modif = re.sub(regex, mo.group(1) + lib.part_el_spec[regex][0], s_new)
+            s_modif = re.sub(regex, mo.group(1) + lib.part_el_spec[regex], s_new)
             if s_new != s_modif:
-                return (s_old, s_modif), lib.part_el_spec[regex][1]
+                return (s_old, s_modif), 'ТИ'
 
     # Проблемные классы
     s_modif, infl = cls_cons_modif(s_new)
@@ -75,9 +107,13 @@ def main(token):
         # Простые времена
         if gr.tense == 'прош':
             stem, fl = part_el(gr)
+        elif gr.tense == 'аор пр':
+            stem, fl = aor_simp(gr)
+        # elif gr.tense.startswith('аор'):
+        #     stem, fl = aor_sigm(gr)
 
         # Сложные времена
-        if re.match('перф|плюскв|буд ?[12]', gr.tense):
+        elif re.match('перф|плюскв|буд ?[12]', gr.tense):
             if gr.role.endswith('св'):
                 if gr.tense in lib.ana_tenses:
                     return ('', lib.ana_tenses[gr.tense]), ''
