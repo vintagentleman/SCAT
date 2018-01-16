@@ -115,7 +115,7 @@ def modif_mv(w):
     mo = re.search('([МВ])Ь', w)
 
     if mo and mo.end() < real_len(w):
-        if w[mo.end() + 1] not in set(lib.vows) - {'Ъ', 'Ь'}:
+        if w[mo.end()] not in set(lib.vows) - {'Ъ', 'Ь'}:
             w = re.sub('([МВ])Ь', '\\1', w)
 
     return w

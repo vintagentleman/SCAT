@@ -1,8 +1,16 @@
 import os
 import re
+import csv
 import lib
 import tools
 from handlers import *
+
+
+def next_page_side(front):
+    if front:
+        return 'f'
+    else:
+        return 'b'
 
 
 class Token(object):
@@ -22,9 +30,20 @@ class Token(object):
             return result
 
         s = self.src
-        s = s.replace('*', '').replace('~', '').replace('[', '').replace(']', '')
-        s = s.replace('&', '<lb/>').replace('\\', '<cb/>')
-        s = re.sub(r'Z -?\d+ ?', '<pb/>', s)
+
+        # Учёт исправлений (обрабатывается исходный вариант)
+        if '<' in s:
+            s = s[:s.index('<') - 1]
+
+        # Маркеры собственности и ошибочности (но вставки оставляем)
+        s = s.replace('*', '').replace('~', '')
+
+        # Разрывы (по тому же принципу, что и между словоформами)
+        s = s.replace(r'%', '').replace('\\', '<lb/><lb/>').replace('&', '<lb/>')
+        if self.pb:
+            s = re.sub(r'Z -?\d+ ?', '<pb n="%s%s"/>' % (self.next_page_num, next_page_side(self.next_page_front)), s)
+
+        # Символы Юникода
         s = re.sub(r'\((.+?)\)', overline, s)
         s = tools.replace_chars(s, 'IRVWU+FSGDLQЯ$', 'їѧѵѡѹѣѳѕѫꙋѯѱꙗ҂')
 
@@ -36,24 +55,8 @@ class Token(object):
             else:
                 s = s[:tools.count_chars(s, 0) + 1] + '҃' + s[tools.count_chars(s, 0) + 1:]
 
-        s = s.lower()
         s = s.replace('ѡⷮ', 'ѿ')
-        s = s.replace('=', 'ѿ')
-
-        if s.find(' ') > -1:
-            s, self.corr = s.split(' ', maxsplit=1)
-
-            # Убрал условие (len(self.corr) > 5): проблемы с висячими разрывами, опять же
-            if self.corr.endswith(('<lb/>', '<cb/>', '<pb/>')):
-                self.corr = self.corr[:-5]
-            # strip() - аналогичная история
-            self.corr = self.corr.strip()[1:-1]
-
-        # Но здесь убирать не надо
-        if s.endswith(('<lb/>', '<cb/>', '<pb/>')) and len(s) > 5:
-            s = s[:-5]
-
-        return s
+        return s.lower()
 
     def get_reg(self):
         s = self.src
@@ -62,18 +65,21 @@ class Token(object):
         if '<' in s:
             s = s[s.index('<') + 1:s.index('>')]
 
-        # Знаки препинания
-        for sign in '.,:;[]':
-            s = s.replace(sign, '')
+        # Знаки препинания (NB: в режиме генерации XML этот блок не нужен)
+        if not isinstance(self, Punct):
+            for sign in '.,:;?!':
+                s = s.replace(sign, '')
 
-        # Разрывы строк, колонок и страниц
-        s = s.replace('&', '').replace('\\', '')
+        # Разрывы
+        s = s.replace(r'%', '').replace('\\', '').replace('&', '')
         s = re.sub(r'Z -?\d+ ?', '', s)
-        s = s.strip()
+
+        # Вставки и непечатные символы
+        s = s.replace('[', '').replace(']', '').strip()
 
         # Упрощение графики и нормализация
         if hasattr(self, 'ana'):
-            # Цифирь не трогаем
+            # Цифирь заменяем арабскими цифрами
             if not self.ana[0].isnumeric():
                 # Цифирные прилагательные типа '$ЗПF#ГО' иногда размечаются (непоследовательно)
                 if self.ana[0] == 'числ/п' and '#' in s:
@@ -82,7 +88,7 @@ class Token(object):
                     return tools.normalise(s, self.ana[0], self.ana[5])
 
             else:
-                return self.src
+                return self.ana[0]
         else:
             return tools.normalise(s, '', '')
 
@@ -134,28 +140,11 @@ class Token(object):
         self.src = tools.replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
         self.token_id = token_id
 
-        # Тег смены содержательной части
-        self.part_b = r'%' in src
-        if self.part_b:
-            self.src = self.src.replace(r'%', '')
-
         # Разрыв страницы
-        z = re.search(r'Z (-?)(\d+) ?', src)
-        if z:
-            self.page_b = True
-            self.next_page_is_front = bool(z.group(1) != '-')
-            self.next_page_num = z.group(2)
-        else:
-            self.page_b = False
-
-        # Разрыв колонки либо строки
-        self.col_b = '\\' in src
-        self.line_b = '&' in src
-
-        self.is_name = '*' in self.src
-        self.is_add = '[' in self.src
-        self.sic = '~' in self.src
-        self.corr = None
+        self.pb = re.search(r'Z (-?)(\d+) ?', src)
+        if self.pb:
+            self.next_page_front = bool(self.pb.group(1) != '-')
+            self.next_page_num = self.pb.group(2)
 
         if ana:
             self.ana = ana
@@ -166,195 +155,124 @@ class Token(object):
         self.orig = self.get_orig()
         self.reg = self.get_reg()
 
-        # Отбрасываем пустые строки и цифирь
         if hasattr(self, 'ana') and self.ana[0] and not self.ana[0].isnumeric():
-            # if self.ana[0] in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
-            if self.ana[0].startswith('гл') and self.ana[2].startswith('а'):
-                # self.stem - кортеж из основы до и после модификаций
-                self.stem, self.fl = self.get_gram_data()
-                if self.stem[1] or self.fl:
-                    self.lemma = self.stem[1] + self.fl
+            # stem - кортеж из основы до и после модификаций
+            self.stem, self.fl = self.get_gram_data()
+            if self.stem[1] or self.fl:
+                self.lemma = self.stem[1] + self.fl
 
     def __repr__(self):
-        result = '<w xml:id="%s"' % self.token_id
-        # TODO: привести грамматику к формату TEI. Но как быть с индексами (плюс-минус)?
-        if hasattr(self, 'ana') and not self.ana[0].isnumeric():
-            result += ' ana="%s"' % ';'.join(item for item in self.ana if item)
-        if hasattr(self, 'lemma'):
-            result += ' lemma="%s"' % self.lemma
-        result += '>\n  <orig>'
+        ana = lemma = ''
+        src = self.src.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
-        # Наполняем
-        if self.corr:
-            result += '<choice><sic>%s</sic><corr>%s</corr></choice>' % (self.orig, self.corr)
-        else:
-            if self.sic:
-                result += '<sic>%s</sic>' % self.orig
+        if hasattr(self, 'ana'):
+            if not self.ana[0].isnumeric():
+                ana = ' ana="%s"' % ';'.join(item for item in self.ana if item)
+                if hasattr(self, 'lemma'):
+                    lemma = ' lemma="%s"' % self.lemma
             else:
-                result += self.orig
+                return '<num><w xml:id="%s" reg="%s" src="%s">%s</w></num>' % (self.token_id, self.reg, src, self.orig)
 
-        result += '''</orig>
-  <reg>%s</reg>
-  <src>%s</src>
-</w>''' % (self.reg, self.src.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
-
-        # Обрамляем
-        if hasattr(self, 'ana') and self.ana[0].isnumeric():
-            result = '<num value="%s">\n%s\n</num>' % (self.ana[0], result)
-        else:
-            if self.is_name:
-                result = '<name>\n%s\n</name>' % result
-            if self.is_add:
-                result = '<add place="margin">\n%s\n</add>' % result
-
-        return result
+        return '<w xml:id="%s"%s%s reg="%s" src="%s">%s</w>' % (self.token_id, ana, lemma, self.reg, src, self.orig)
 
 
 class Punct(Token):
 
     def __repr__(self):
-        return '<pc xml:id="%s">%s</pc>' % (self.token_id, self.reg)
+        return '<pc xml:id="%s">%s</pc>' % (self.token_id, self.orig)
 
 
 class DefaultMetadata:
 
     prefix = 'DGlush'
-    part = 1
     page = '22'
     front = True
-    col = 1
-    line = 1
 
 
 def process_file(file, metadata=DefaultMetadata):
 
-    def front_text(front_bool):
-        if front_bool:
-            return 'front'
+    def split_block(mo, s):
+        if mo:
+            return s[:mo.start()], s[mo.start():]
         else:
-            return 'back'
+            return s, ''
 
     root = os.getcwd()
-    # Исключение может возбуждаться и для папок, и для файла
+
     os.chdir(root + '\\txt')
     inpt = open(file, mode='r', encoding='utf-8')
-
-    # Засим всё в порядке, начинаем обработку
     print('Please wait. Python is processing your data...')
+    reader = csv.reader(inpt, delimiter='\t')
 
     os.makedirs(root + '\\xml', exist_ok=True)
     os.chdir(root + '\\xml')
     otpt = open(file[:-3] + 'xml', mode='w', encoding='utf-8')
     xmlid = 1
 
-    # Инициализация структуры XML
-    otpt.write('''  <text>
-    <div1 type="part" n="%d">
-      <div2 type="page" n="%s">
-        <div3 type="%s">
-          <div4 type="col" n="%d">
-            <l n="%d">\n''' % (metadata.part, metadata.page, front_text(metadata.front), metadata.col, metadata.line))
+    otpt.write('''<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader type="text">
 
-    for i, line in enumerate(inpt):
-        items = [item.strip() for item in line.split(sep='\t')]
+  </teiHeader>
+  <text>
+    <body>
+      <pb n="%s%s"/>\n''' % (metadata.page, next_page_side(metadata.front)))
 
-        # Если при словоформе есть висячие знаки препинания, сохраняем их отдельно и убираем
-        punct_index = sorted([items[0].find(c) for c in '.,:;?!' if items[0].find(c) != -1])
-        if punct_index:
-            punct = items[0][punct_index[0]:]
-            items[0] = items[0][:punct_index[0]]
+    for i, row in enumerate(reader):
+        items = [item.strip() for item in row]
+        form = items[0]
+
+        # Расчленяем строку-словоформу на три блока (обязательно наличие хотя бы одного): 1) саму словоформу,
+        # 2) висячие (конечные) знаки препинания и 3) висячие разрывы. Порядок именно такой: ср. 'МIРЪ. Z 27'
+        pc_mo = re.search('[.,:;?!]', form)
+        form, pc = split_block(pc_mo, form)
+
+        if pc:
+            br_mo = re.search(r'&$|\\$|Z (-?)(\d+)$', pc)
+            pc, br = split_block(br_mo, pc)
         else:
-            punct = ''
+            br_mo = re.search(r'&$|\\$|Z (-?)(\d+)$', form)
+            form, br = split_block(br_mo, form)
 
-        # Теперь в начальной подстроке либо ничего, либо нормальный токен
         tokens = []
-        if items[0]:
+
+        # Обработка словоформы (если она есть)
+        if form:
             if len(items) == 7:
                 # Словоформа плюс разметка
-                token = Token(items[0], '%s.%d' % (metadata.prefix, xmlid), [items[i] for i in range(1, 7)])
+                token = Token(form, '%s.%d' % (metadata.prefix, xmlid), [items[i] for i in range(1, 7)])
             elif len(items) == 1:
                 # Только словоформа
-                token = Token(items[0], '%s.%d' % (metadata.prefix, xmlid))
+                token = Token(form, '%s.%d' % (metadata.prefix, xmlid))
             else:
                 print('Warning: corrupt data in line %d.' % (i + 1))
                 continue
-            # Проверяем, не голый ли это символ разрыва (им идентификатор не присваиваем)
-            if token.reg:
-                xmlid += 1
-            tokens += [token]
 
-        if punct:
-            tokens += [Punct(punct, '%s.%d' % (metadata.prefix, xmlid))]
+            tokens += [token]
             xmlid += 1
 
+        # Далее пунктуация и разрывы
+        if pc:
+            tokens += [Punct(pc, '%s.%d' % (metadata.prefix, xmlid))]
+            xmlid += 1
+
+        # Разрывы не индексируем; разрывы колонок приравниваем к разрывам строк (XTZ их не поддерживает)
+        if br:
+            if br.startswith('&'):
+                tokens += ['<lb/>']
+            elif br.startswith('\\'):
+                tokens += ['<lb/><lb/>']
+            else:
+                tokens += ['<pb n="%s%s"/>' % (br_mo.group(2), next_page_side(bool(br_mo.group(1) != '-')))]
+
         for token in tokens:
-            # Голые разрывы не индексируем в принципе
-            if token.reg:
-                otpt.write('%s\n' % str(token))
+            otpt.write('      %s\n' % str(token))
 
-            if token.part_b:
-                if not token.page_b:
-                    raise RuntimeError('Error: part break w/o page break in line %d.' % (i + 1))
-
-                metadata.part += 1
-                metadata.col = 1
-                metadata.line = 1
-                metadata.front = token.next_page_is_front
+            if isinstance(token, Token) and token.pb:
                 metadata.page = token.next_page_num
-                otpt.write('''            </l>
-          </div4>
-        </div3>
-      </div2>
-    </div1>
-    <div1 type="part" n="%d">
-      <div2 type="page" n="%s">
-        <div3 type="%s">
-          <div4 type="col" n="%d">
-            <l n="%d">\n''' % (metadata.part, metadata.page, front_text(metadata.front), metadata.col, metadata.line))
+                metadata.front = token.next_page_front
 
-            elif token.page_b:
-                metadata.col = 1
-                metadata.line = 1
-                metadata.front = token.next_page_is_front
-                metadata.page = token.next_page_num
-
-                if metadata.front:
-                    otpt.write('''            </l>
-          </div4>
-        </div3>
-      </div2>
-      <div2 type="page" n="%s">
-        <div3 type="%s">
-          <div4 type="col" n="%d">
-            <l n="%d">\n''' % (metadata.page, front_text(metadata.front), metadata.col, metadata.line))
-
-                else:
-                    otpt.write('''            </l>
-          </div4>
-        </div3>
-        <div3 type="%s">
-          <div4 type="col" n="%d">
-            <l n="%d">\n''' % (front_text(metadata.front), metadata.col, metadata.line))
-
-            elif token.col_b:
-                metadata.col += 1
-                metadata.line = 1
-                otpt.write('''            </l>
-          </div4>
-          <div4 type="col" n="%d">
-            <l n="%d">\n''' % (metadata.col, metadata.line))
-
-            elif token.line_b:
-                metadata.line += 1
-                otpt.write('''            </l>
-            <l n="%d">\n''' % metadata.line)
-
-    otpt.write('''            </l>
-          </div4>
-        </div3>
-      </div2>
-    </div1>
-  </text>''')
+    otpt.write('    </body>\n  </text>\n</TEI>\n')
 
     inpt.close()
     otpt.close()
@@ -362,6 +280,6 @@ def process_file(file, metadata=DefaultMetadata):
 
 if __name__ == '__main__':
     try:
-        process_file('DGlush.txt')
+        process_file('DGlush.csv')
     except FileNotFoundError:
         print('Error: source file missing.')

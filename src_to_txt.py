@@ -6,7 +6,7 @@ from lib import letter_values
 
 
 def parse_line(line):
-    line = tools.replace_chars(line, 'ABEKMHOPCTXaeopcyx', 'АВЕКМНОРСТХаеорсух')
+    line = tools.replace_chars(line, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
 
     nums = line[line.rfind('/') + 1:].split()
     line = line[:line.rfind('/')].split()
@@ -29,7 +29,7 @@ def parse_line(line):
             line.insert(j + 1, line[j][punct.start():])
             line[j] = line[j][:punct.start()]
 
-        elif line[j][-1] == '&' and len(line[j]) > 1:
+        elif line[j][-1] in ('&', '\\') and len(line[j]) > 1:
             line.insert(j + 1, line[j][-1])
             line[j] = line[j][:-1]
 
