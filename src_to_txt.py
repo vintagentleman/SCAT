@@ -72,7 +72,7 @@ def get_txt(file, root_dir):
     inpt = open(file, mode='r', encoding='IBM866')
     os.makedirs(root_dir + '\\txt', exist_ok=True)
     os.chdir(root_dir + '\\txt')
-    otpt = open(file, mode='w', encoding='utf-8')
+    otpt = open(file[:-3] + 'csv', mode='w', encoding='utf-8')
 
     for i in inpt.readlines():
         i = parse_line(i)

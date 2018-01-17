@@ -1,6 +1,8 @@
 import os
 import re
+import glob
 import csv
+import json
 import lib
 import tools
 from handlers import *
@@ -66,9 +68,8 @@ class Token(object):
             s = s[s.index('<') + 1:s.index('>')]
 
         # Знаки препинания (NB: в режиме генерации XML этот блок не нужен)
-        if not isinstance(self, Punct):
-            for sign in '.,:;?!':
-                s = s.replace(sign, '')
+        for sign in '.,:;?!':
+            s = s.replace(sign, '')
 
         # Разрывы
         s = s.replace(r'%', '').replace('\\', '').replace('&', '')
@@ -141,7 +142,7 @@ class Token(object):
         self.token_id = token_id
 
         # Разрыв страницы
-        self.pb = re.search(r'Z (-?)(\d+) ?', src)
+        self.pb = re.search(r'Z (-?)(\d+) ?', self.src)
         if self.pb:
             self.next_page_front = bool(self.pb.group(1) != '-')
             self.next_page_num = self.pb.group(2)
@@ -176,20 +177,7 @@ class Token(object):
         return '<w xml:id="%s"%s%s reg="%s" src="%s">%s</w>' % (self.token_id, ana, lemma, self.reg, src, self.orig)
 
 
-class Punct(Token):
-
-    def __repr__(self):
-        return '<pc xml:id="%s">%s</pc>' % (self.token_id, self.orig)
-
-
-class DefaultMetadata:
-
-    prefix = 'DGlush'
-    page = '22'
-    front = True
-
-
-def process_file(file, metadata=DefaultMetadata):
+def process(file):
 
     def split_block(mo, s):
         if mo:
@@ -197,26 +185,52 @@ def process_file(file, metadata=DefaultMetadata):
         else:
             return s, ''
 
-    root = os.getcwd()
-
-    os.chdir(root + '\\txt')
     inpt = open(file, mode='r', encoding='utf-8')
-    print('Please wait. Python is processing your data...')
     reader = csv.reader(inpt, delimiter='\t')
+    fn = file[:-4]
+    md = metadata[fn]
 
     os.makedirs(root + '\\xml', exist_ok=True)
     os.chdir(root + '\\xml')
-    otpt = open(file[:-3] + 'xml', mode='w', encoding='utf-8')
+    otpt = open(fn + '.xml', mode='w', encoding='utf-8')
+
     xmlid = 1
 
     otpt.write('''<?xml version="1.0" encoding="UTF-8"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
   <teiHeader type="text">
+    <fileDesc>
 
+      <titleStmt>
+        <title>%s</title>''' % md['title'])
+
+    for pair in md['resp']:
+        otpt.write('''
+        <respStmt>
+          <resp>%s</resp>
+          <name>%s</name>
+        </respStmt>''' % tuple(pair))
+
+    otpt.write('''
+      </titleStmt>
+
+      <publicationStmt>
+        <publisher>%s</publisher>
+        <pubPlace>%s</pubPlace>
+        <date>%s</date>
+        <idno type="ISBN">%s</idno>
+      </publicationStmt>\n''' % tuple(md['pub']))
+
+    otpt.write('''
+      <sourceDesc>
+        <bibl>%s</bibl>
+      </sourceDesc>
+
+    </fileDesc>
   </teiHeader>
   <text>
     <body>
-      <pb n="%s%s"/>\n''' % (metadata.page, next_page_side(metadata.front)))
+      <pb n="%s"/>\n''' % (md['bibl'], md['page']))
 
     for i, row in enumerate(reader):
         items = [item.strip() for item in row]
@@ -224,7 +238,7 @@ def process_file(file, metadata=DefaultMetadata):
 
         # Расчленяем строку-словоформу на три блока (обязательно наличие хотя бы одного): 1) саму словоформу,
         # 2) висячие (конечные) знаки препинания и 3) висячие разрывы. Порядок именно такой: ср. 'МIРЪ. Z 27'
-        pc_mo = re.search('[.,:;?!]', form)
+        pc_mo = re.search('(?<![%s#])[%s]+' % (2 * ('.,:;?!',)), form)
         form, pc = split_block(pc_mo, form)
 
         if pc:
@@ -240,10 +254,10 @@ def process_file(file, metadata=DefaultMetadata):
         if form:
             if len(items) == 7:
                 # Словоформа плюс разметка
-                token = Token(form, '%s.%d' % (metadata.prefix, xmlid), [items[i] for i in range(1, 7)])
+                token = Token(form, '%s_%d' % (fn, xmlid), [items[i] for i in range(1, 7)])
             elif len(items) == 1:
                 # Только словоформа
-                token = Token(form, '%s.%d' % (metadata.prefix, xmlid))
+                token = Token(form, '%s_%d' % (fn, xmlid))
             else:
                 print('Warning: corrupt data in line %d.' % (i + 1))
                 continue
@@ -253,7 +267,7 @@ def process_file(file, metadata=DefaultMetadata):
 
         # Далее пунктуация и разрывы
         if pc:
-            tokens += [Punct(pc, '%s.%d' % (metadata.prefix, xmlid))]
+            tokens += ['<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc)]
             xmlid += 1
 
         # Разрывы не индексируем; разрывы колонок приравниваем к разрывам строк (XTZ их не поддерживает)
@@ -268,18 +282,18 @@ def process_file(file, metadata=DefaultMetadata):
         for token in tokens:
             otpt.write('      %s\n' % str(token))
 
-            if isinstance(token, Token) and token.pb:
-                metadata.page = token.next_page_num
-                metadata.front = token.next_page_front
-
     otpt.write('    </body>\n  </text>\n</TEI>\n')
-
-    inpt.close()
     otpt.close()
+    os.chdir(root + '\\txt')
+    inpt.close()
 
 
 if __name__ == '__main__':
-    try:
-        process_file('DGlush.csv')
-    except FileNotFoundError:
-        print('Error: source file missing.')
+    metadata = json.load(open('metadata.json', mode='r', encoding='utf-8'))
+
+    root = os.getcwd()
+    os.chdir(root + '\\txt')
+    files = glob.glob('*.csv')
+
+    for f in files:
+        process(f)
