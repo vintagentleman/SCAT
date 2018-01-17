@@ -8,13 +8,6 @@ import tools
 from handlers import *
 
 
-def next_page_side(front):
-    if front:
-        return 'f'
-    else:
-        return 'b'
-
-
 class Token(object):
 
     def get_orig(self):
@@ -43,7 +36,7 @@ class Token(object):
         # Разрывы (по тому же принципу, что и между словоформами)
         s = s.replace(r'%', '').replace('\\', '<lb/><lb/>').replace('&', '<lb/>')
         if self.pb:
-            s = re.sub(r'Z -?\d+ ?', '<pb n="%s%s"/>' % (self.next_page_num, next_page_side(self.next_page_front)), s)
+            s = re.sub(r'Z -?\d+ ?', '<pb n="%s"/>' % self.pb.group(1), s)
 
         # Символы Юникода
         s = re.sub(r'\((.+?)\)', overline, s)
@@ -140,12 +133,7 @@ class Token(object):
     def __init__(self, src, token_id, ana=None):
         self.src = tools.replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
         self.token_id = token_id
-
-        # Разрыв страницы
-        self.pb = re.search(r'Z (-?)(\d+) ?', self.src)
-        if self.pb:
-            self.next_page_front = bool(self.pb.group(1) != '-')
-            self.next_page_num = self.pb.group(2)
+        self.pb = re.search(r'Z (-?\d+) ?', self.src)
 
         if ana:
             self.ana = ana
@@ -181,7 +169,7 @@ def process(file):
 
     def split_block(mo, s):
         if mo:
-            return s[:mo.start()], s[mo.start():]
+            return s[:mo.start()].strip(), s[mo.start():].strip()
         else:
             return s, ''
 
@@ -233,8 +221,7 @@ def process(file):
       <pb n="%s"/>\n''' % (md['bibl'], md['page']))
 
     for i, row in enumerate(reader):
-        items = [item.strip() for item in row]
-        form = items[0]
+        form = row[0].strip()
 
         # Расчленяем строку-словоформу на три блока (обязательно наличие хотя бы одного): 1) саму словоформу,
         # 2) висячие (конечные) знаки препинания и 3) висячие разрывы. Порядок именно такой: ср. 'МIРЪ. Z 27'
@@ -242,20 +229,20 @@ def process(file):
         form, pc = split_block(pc_mo, form)
 
         if pc:
-            br_mo = re.search(r'&$|\\$|Z (-?)(\d+)$', pc)
+            br_mo = re.search(r'&$|\\$|Z (-?\d+)$', pc)
             pc, br = split_block(br_mo, pc)
         else:
-            br_mo = re.search(r'&$|\\$|Z (-?)(\d+)$', form)
+            br_mo = re.search(r'&$|\\$|Z (-?\d+)$', form)
             form, br = split_block(br_mo, form)
 
         tokens = []
 
         # Обработка словоформы (если она есть)
         if form:
-            if len(items) == 7:
+            if len(row) == 7:
                 # Словоформа плюс разметка
-                token = Token(form, '%s_%d' % (fn, xmlid), [items[i] for i in range(1, 7)])
-            elif len(items) == 1:
+                token = Token(form, '%s_%d' % (fn, xmlid), [row[i].strip() for i in range(1, 7)])
+            elif len(row) == 1:
                 # Только словоформа
                 token = Token(form, '%s_%d' % (fn, xmlid))
             else:
@@ -277,7 +264,7 @@ def process(file):
             elif br.startswith('\\'):
                 tokens += ['<lb/><lb/>']
             else:
-                tokens += ['<pb n="%s%s"/>' % (br_mo.group(2), next_page_side(bool(br_mo.group(1) != '-')))]
+                tokens += ['<pb n="%s"/>' % br_mo.group(1)]
 
         for token in tokens:
             otpt.write('      %s\n' % str(token))
