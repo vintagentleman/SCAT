@@ -38,12 +38,18 @@ class Token(object):
         # Маркеры собственности и ошибочности (но вставки оставляем)
         s = s.replace('*', '').replace('~', '')
 
-        # Разрывы (по тому же принципу, что и между словоформами)
-        if self.lb:
-            s = s.replace('&', '<lb n="%d"/>' % data['line'])
+        # Разрыв части внутри слова - невероятно, но подстраховаться не грех
+        if r'%' in s:
+            s = s.replace(r'%', '<milestone/>')
+
+        # Разрывов строк внутри одной словоформы может быть несколько
+        while '&' in s:
             data['line'] += 1
-        elif self.cb or self.pb:
-            if self.cb:
+            s = s.replace('&', '<lb n="%d"/>' % data['line'], 1)
+
+        # Разрывы колонок/страниц - по тому же принципу, что и между словоформами
+        if '\\' in s or self.pb:
+            if '\\' in s:
                 data['col'] = 'b'
             else:
                 data['page'] = self.pb.group(1)
@@ -80,7 +86,7 @@ class Token(object):
             s = s.replace(sign, '')
 
         # Разрывы
-        s = s.replace(r'%', '').replace('\\', '').replace('&', '')
+        s = s.replace(r'%', '').replace('&', '').replace('\\', '')
         s = re.sub(r'Z -?\d+ ?', '', s)
 
         # Вставки и непечатные символы
@@ -101,7 +107,7 @@ class Token(object):
         else:
             return tools.normalise(s, '', '')
 
-    def get_gram_data(self):
+    def get_gram(self):
 
         if self.pos != 'мест':
             if self.pos == 'сущ':
@@ -148,10 +154,7 @@ class Token(object):
     def __init__(self, src, token_id, ana=None):
         self.src = tools.replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
         self.token_id = token_id
-
         self.pb = re.search(r'Z (-?\d+) ?', self.src)
-        self.cb = '\\' in self.src
-        self.lb = '&' in self.src
 
         if ana:
             self.ana = ana
@@ -164,7 +167,7 @@ class Token(object):
 
         if hasattr(self, 'ana') and self.ana[0] and not self.ana[0].isnumeric():
             # stem - кортеж из основы до и после модификаций
-            self.stem, self.fl = self.get_gram_data()
+            self.stem, self.fl = self.get_gram()
             if self.stem[1] or self.fl:
                 self.lemma = self.stem[1] + self.fl
 
@@ -276,15 +279,17 @@ def process(fn):
         if br:
             if r'%' in br:
                 tokens += ['<milestone/>']
+
             elif '&' in br:
-                tokens += ['<lb n="%d"/>' % data['line']]
                 data['line'] += 1
+                tokens += ['<lb n="%d"/>' % data['line']]
+
             # Если в рукописи есть колонки, то разрыв колонки обозначает переход ко второй,
             # разрыв страницы - обновление нумерации и переход к первой. Третьей не дано
-            else:
+            elif '\\' in br or re.search(r'Z -?\d+ ?', br):
                 if '\\' in br:
                     data['col'] = 'b'
-                elif 'Z' in br:
+                else:
                     data['page'] = br_mo.group(1)
                     if 'col' in data:
                         data['col'] = 'a'
