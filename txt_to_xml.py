@@ -13,12 +13,17 @@ class Token(object):
     def get_orig(self):
 
         def overline(match):
-            result = tools.replace_chars(match.group(1).upper(), 'БВГДЖЗКЛМНОПРСТХЦЧШЩFАЕD+ЮRGЯИIЪЬWЫУU', (
-                'ⷠ', 'ⷡ', 'ⷢ', 'ⷣ', 'ⷤ', 'ⷥ', 'ⷦ', 'ⷧ', 'ⷨ', 'ⷩ',
-                'ⷪ', 'ⷫ', 'ⷬ', 'ⷭ', 'ⷮ', 'ⷯ', 'ⷰ', 'ⷱ', 'ⷲ',
-                'ⷳ', 'ⷴ', 'ⷶ', 'ⷷ', 'ⷹ', 'ⷺ', 'ⷻ', 'ⷽ', 'ⷾ',
-                'ⷼ', 'ꙶ', 'ꙵ', 'ꙸ', 'ꙺ', 'ꙻ', 'ꙹ', 'ꙷ', 'ⷪꙷ',
-            ))
+            result = tools.replace_chars(
+                match.group(1).upper(),
+                'БВГДЖЗКЛМНОПРСТХЦЧШЩFАЕD+ЮRGЯИIЪЬWЫУU',
+                (
+                    'ⷠ', 'ⷡ', 'ⷢ', 'ⷣ', 'ⷤ', 'ⷥ', 'ⷦ', 'ⷧ', 'ⷨ',
+                    'ⷩ', 'ⷪ', 'ⷫ', 'ⷬ', 'ⷭ', 'ⷮ', 'ⷯ', 'ⷰ', 'ⷱ',
+                    'ⷲ', 'ⷳ', 'ⷴ', 'ⷶ', 'ⷷ', 'ⷹ', 'ⷺ', 'ⷻ', 'ⷽ',
+                    'ⷾ', 'ⷼ', 'ꙶ', 'ꙵ', 'ꙸ', 'ꙺ', 'ꙻ', 'ꙹ', 'ꙷ',
+                    'ⷪꙷ',  # Здесь два символа
+                )
+            )
             if match.group(1).islower():
                 result = '҇' + result
 
@@ -34,9 +39,19 @@ class Token(object):
         s = s.replace('*', '').replace('~', '')
 
         # Разрывы (по тому же принципу, что и между словоформами)
-        s = s.replace(r'%', '').replace('\\', '<lb/><lb/>').replace('&', '<lb/>')
-        if self.pb:
-            s = re.sub(r'Z -?\d+ ?', '<pb n="%s"/>' % self.pb.group(1), s)
+        if self.lb:
+            s = s.replace('&', '<lb n="%d"/>' % data['line'])
+            data['line'] += 1
+        elif self.cb or self.pb:
+            if self.cb:
+                data['col'] = 'b'
+            else:
+                data['page'] = self.pb.group(1)
+                if 'col' in data:
+                    data['col'] = 'a'
+
+            data['line'] = 1
+            s = re.sub(r'\\|Z -?\d+ ?', '<pb n="%s"/>' % (data['page'] + data.get('col', '')), s)
 
         # Символы Юникода
         s = re.sub(r'\((.+?)\)', overline, s)
@@ -133,7 +148,10 @@ class Token(object):
     def __init__(self, src, token_id, ana=None):
         self.src = tools.replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
         self.token_id = token_id
+
         self.pb = re.search(r'Z (-?\d+) ?', self.src)
+        self.cb = '\\' in self.src
+        self.lb = '&' in self.src
 
         if ana:
             self.ana = ana
@@ -165,7 +183,7 @@ class Token(object):
         return '<w xml:id="%s"%s%s reg="%s" src="%s">%s</w>' % (self.token_id, ana, lemma, self.reg, src, self.orig)
 
 
-def process(file):
+def process(fn):
 
     def split_block(mo, s):
         if mo:
@@ -173,10 +191,8 @@ def process(file):
         else:
             return s, ''
 
-    inpt = open(file, mode='r', encoding='utf-8')
+    inpt = open(fn + '.csv', mode='r', encoding='utf-8')
     reader = csv.reader(inpt, delimiter='\t')
-    fn = file[:-4]
-    md = metadata[fn]
 
     os.makedirs(root + '\\xml', exist_ok=True)
     os.chdir(root + '\\xml')
@@ -190,9 +206,9 @@ def process(file):
     <fileDesc>
 
       <titleStmt>
-        <title>%s</title>''' % md['title'])
+        <title>%s</title>''' % data['title'])
 
-    for pair in md['resp']:
+    for pair in data['resp']:
         otpt.write('''
         <respStmt>
           <resp>%s</resp>
@@ -207,7 +223,7 @@ def process(file):
         <pubPlace>%s</pubPlace>
         <date>%s</date>
         <idno type="ISBN">%s</idno>
-      </publicationStmt>\n''' % tuple(md['pub']))
+      </publicationStmt>\n''' % tuple(data['pub']))
 
     otpt.write('''
       <sourceDesc>
@@ -218,7 +234,7 @@ def process(file):
   </teiHeader>
   <text>
     <body>
-      <pb n="%s"/>\n''' % (md['bibl'], md['page']))
+      <pb n="%s"/>\n''' % (data['bibl'], (data['page'] + data.get('col', ''))))
 
     for i, row in enumerate(reader):
         form = row[0].strip()
@@ -229,10 +245,10 @@ def process(file):
         form, pc = split_block(pc_mo, form)
 
         if pc:
-            br_mo = re.search(r'&$|\\$|Z (-?\d+)$', pc)
+            br_mo = re.search(r'%$|&$|\\$|Z (-?\d+)$', pc)
             pc, br = split_block(br_mo, pc)
         else:
-            br_mo = re.search(r'&$|\\$|Z (-?\d+)$', form)
+            br_mo = re.search(r'%$|&$|\\$|Z (-?\d+)$', form)
             form, br = split_block(br_mo, form)
 
         tokens = []
@@ -257,14 +273,24 @@ def process(file):
             tokens += ['<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc)]
             xmlid += 1
 
-        # Разрывы не индексируем; разрывы колонок приравниваем к разрывам строк (XTZ их не поддерживает)
         if br:
-            if br.startswith('&'):
-                tokens += ['<lb/>']
-            elif br.startswith('\\'):
-                tokens += ['<lb/><lb/>']
+            if r'%' in br:
+                tokens += ['<milestone/>']
+            elif '&' in br:
+                tokens += ['<lb n="%d"/>' % data['line']]
+                data['line'] += 1
+            # Если в рукописи есть колонки, то разрыв колонки обозначает переход ко второй,
+            # разрыв страницы - обновление нумерации и переход к первой. Третьей не дано
             else:
-                tokens += ['<pb n="%s"/>' % br_mo.group(1)]
+                if '\\' in br:
+                    data['col'] = 'b'
+                elif 'Z' in br:
+                    data['page'] = br_mo.group(1)
+                    if 'col' in data:
+                        data['col'] = 'a'
+
+                data['line'] = 1
+                tokens += ['<pb n="%s"/>' % (data['page'] + data.get('col', ''))]
 
         for token in tokens:
             otpt.write('      %s\n' % str(token))
@@ -282,5 +308,7 @@ if __name__ == '__main__':
     os.chdir(root + '\\txt')
     files = glob.glob('*.csv')
 
-    for f in files:
-        process(f)
+    for file in files:
+        name = file[:-4]
+        data = metadata[name]
+        process(name)
