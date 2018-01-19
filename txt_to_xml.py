@@ -196,11 +196,8 @@ def process(fn):
 
     inpt = open(fn + '.csv', mode='r', encoding='utf-8')
     reader = csv.reader(inpt, delimiter='\t')
-
-    os.makedirs(root + '\\xml', exist_ok=True)
     os.chdir(root + '\\xml')
     otpt = open(fn + '.xml', mode='w', encoding='utf-8')
-
     xmlid = 1
 
     otpt.write('''<?xml version="1.0" encoding="UTF-8"?>
@@ -248,10 +245,10 @@ def process(fn):
         form, pc = split_block(pc_mo, form)
 
         if pc:
-            br_mo = re.search(r'%$|&$|\\$|Z (-?\d+)$', pc)
+            br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', pc)
             pc, br = split_block(br_mo, pc)
         else:
-            br_mo = re.search(r'%$|&$|\\$|Z (-?\d+)$', form)
+            br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', form)
             form, br = split_block(br_mo, form)
 
         tokens = []
@@ -310,6 +307,7 @@ if __name__ == '__main__':
     metadata = json.load(open('metadata.json', mode='r', encoding='utf-8'))
 
     root = os.getcwd()
+    os.makedirs(root + '\\xml', exist_ok=True)
     os.chdir(root + '\\txt')
     files = glob.glob('*.csv')
 

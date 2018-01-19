@@ -10,37 +10,50 @@ def parse_line(line):
 
     nums = line[line.rfind('/') + 1:].split()
     line = line[:line.rfind('/')].split()
-
     j = 0
-    while j < len(line):
 
-        if len(line) > j + 1 and line[j + 1][0] == '<':
+    while j < len(line):
+        # Сначала собираем вместе токены из множества кусков:
+        # ошибочные написания и межстраничные разрывы
+        if len(line) > j + 1 and line[j + 1].startswith('<'):
             corr = line[j + 1]
             del line[j + 1]
 
+            # Правки могут быть неоднословные
             while '>' not in corr:
                 corr += ' ' + line[j + 1]
                 del line[j + 1]
 
             line[j] = '%s %s' % (line[j], corr)
 
-        punct = re.search('[.,:;?!]', line[j])
-        if punct and punct.start() > 0:
-            line.insert(j + 1, line[j][punct.start():])
-            line[j] = line[j][:punct.start()]
-
-        elif line[j][-1] in ('&', '\\') and len(line[j]) > 1:
-            line.insert(j + 1, line[j][-1])
-            line[j] = line[j][:-1]
-
         if line[j] == 'Z':
             line[j] = '%s %s' % (line[j], line[j + 1])
             del line[j + 1]
 
-        elif line[j][-1] == 'Z':
+        elif line[j].endswith('Z'):
             line[j] = '%s %s %s' % (line[j], line[j + 1], line[j + 2])
             del line[j + 1:j + 3]
-            j -= 1
+            # '~АБВZ -123 ГДЖ <АБВZ -123 ГДЕ>'
+            continue
+
+        # Типичный случай пунктуации слева - '.*.' (цифирь)
+        pc = re.search('^[.,:;?!]+?', line[j])
+        if pc and len(pc.group()) != len(line[j]):
+            line.insert(j, line[j][:pc.end()])
+            line[j + 1] = line[j + 1][pc.end():]
+            j += 1
+
+        # Нормальная пунктуация (справа)
+        pc = re.search('(?<!^)[.,:;?!]+?', line[j])
+        if pc and len(pc.group()) != len(line[j]):
+            line.insert(j + 1, line[j][pc.start():])
+            line[j] = line[j][:pc.start()]
+            j += 1
+
+        # Висячие разрывы
+        if line[j].endswith(('&', '\\')) and len(line[j]) > 1:
+            line.insert(j + 1, line[j][-1])
+            line[j] = line[j][:-1]
 
         j += 1
 
@@ -53,6 +66,8 @@ def process(wrds, nums):
     for word in wrds:
         if word == '*':
             num = nums[nums_done]
+            if '#' not in num:
+                num += '#'
             titlo = num.index('#')
 
             if num[0] == '$':
@@ -67,11 +82,10 @@ def process(wrds, nums):
             yield word
 
 
-def get_txt(file, root_dir):
+def get_txt(file):
 
     inpt = open(file, mode='r', encoding='IBM866')
-    os.makedirs(root_dir + '\\txt', exist_ok=True)
-    os.chdir(root_dir + '\\txt')
+    os.chdir(root + '\\txt')
     otpt = open(file[:-3] + 'csv', mode='w', encoding='utf-8')
 
     for i in inpt.readlines():
@@ -81,20 +95,15 @@ def get_txt(file, root_dir):
             otpt.write('%s\n' % token)
 
     otpt.close()
-    os.chdir(root_dir + '\\src')
+    os.chdir(root + '\\src')
     inpt.close()
 
 
 if __name__ == '__main__':
-    try:
-        root = os.getcwd()
-        os.chdir(root + '\\src')
+    root = os.getcwd()
+    os.makedirs(root + '\\txt', exist_ok=True)
+    os.chdir(root + '\\src')
+    files = glob.glob('*.txt')
 
-        print('Please wait. Python is processing your data...')
-        files = glob.glob('*.txt')
-
-        for f in files:
-            get_txt(f, root)
-
-    except FileNotFoundError:
-        print('Error: source data directory missing.')
+    for f in files:
+        get_txt(f)

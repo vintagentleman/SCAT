@@ -5,7 +5,7 @@ import src_to_txt
 class TestParsing(unittest.TestCase):
 
     def test_parse_line(self):
-        result = src_to_txt.parse_line('И СЛЫША МАZ -26 НIЕМЪ СЛО(в).;& Z -22 *СКАZ -19 ЗА&ЮЩЕЕ * БЛГОZ 23 ВО(Л)СТВО#, И ЖИ(Т)Е, МАZ -26 НIЕМЪ/    А# Б#')
+        result = src_to_txt.parse_line('И СЛЫША МАZ -26 НIЕМЪ СЛО(в).;& Z -22 *СКАZ -19 ЗА&ЮЩЕЕ .*. БЛГОZ 23 ВО(Л)СТВО#, И ЖИ(Т)Е, МАZ -26 НIЕМЪ/    А# Б#')
         self.assertEqual(result, (
             [
                 'И',
@@ -16,7 +16,9 @@ class TestParsing(unittest.TestCase):
                 '&',
                 'Z -22',
                 '*СКАZ -19 ЗА&ЮЩЕЕ',
+                '.',
                 '*',
+                '.',
                 'БЛГОZ 23 ВО(Л)СТВО#',
                 ',',
                 'И',
