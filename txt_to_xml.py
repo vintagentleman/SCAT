@@ -10,7 +10,8 @@ from handlers import *
 
 class Token(object):
 
-    def get_orig(self):
+    @staticmethod
+    def ascii_to_unicode(s):
 
         def overline(match):
             result = tools.replace_chars(
@@ -29,12 +30,20 @@ class Token(object):
 
             return result
 
-        s = self.src
+        s = re.sub(r'\((.+?)\)', overline, s)
+        s = tools.replace_chars(s, 'IRVWU+FSGDLQЯ$', 'їѧѵѡѹѣѳѕѫꙋѯѱꙗ҂')
 
-        # Учёт исправлений (обрабатывается исходный вариант)
-        if '<' in s:
-            s = s[:s.index('<') - 1]
+        if '#' in s:
+            s = s.replace('#', '')
 
+            if tools.count_chars(s) > 1:
+                s = s[:tools.count_chars(s, 1) + 1] + '҃' + s[tools.count_chars(s, 1) + 1:]
+            else:
+                s = s[:tools.count_chars(s, 0) + 1] + '҃' + s[tools.count_chars(s, 0) + 1:]
+
+        return s.replace('ѡⷮ', 'ѿ').lower()
+
+    def get_orig(self, s):
         # Маркеры собственности и ошибочности (но вставки оставляем)
         s = s.replace('*', '').replace('~', '')
 
@@ -59,38 +68,24 @@ class Token(object):
             data['line'] = 1
             s = re.sub(r'\\|Z -?\d+ ?', '<pb n="%s"/>' % (data['page'] + data.get('col', '')), s)
 
-        # Символы Юникода
-        s = re.sub(r'\((.+?)\)', overline, s)
-        s = tools.replace_chars(s, 'IRVWU+FSGDLQЯ$', 'їѧѵѡѹѣѳѕѫꙋѯѱꙗ҂')
+        return self.ascii_to_unicode(s)
 
-        if '#' in s:
-            s = s.replace('#', '')
-
-            if tools.count_chars(s) > 1:
-                s = s[:tools.count_chars(s, 1) + 1] + '҃' + s[tools.count_chars(s, 1) + 1:]
-            else:
-                s = s[:tools.count_chars(s, 0) + 1] + '҃' + s[tools.count_chars(s, 0) + 1:]
-
-        s = s.replace('ѡⷮ', 'ѿ')
-        return s.lower()
-
-    def get_reg(self):
-        s = self.src
-
-        # Учёт исправлений (обрабатывается исправленный вариант)
-        if '<' in s:
-            s = s[s.index('<') + 1:s.index('>')]
-
-        # Знаки препинания (NB: в режиме генерации XML этот блок не нужен)
-        for sign in '.,:;?!':
-            s = s.replace(sign, '')
-
-        # Разрывы
+    def get_corr(self, s):
+        s = s.replace('*', '').replace('~', '').replace('[', '').replace(']', '')
         s = s.replace(r'%', '').replace('&', '').replace('\\', '')
         s = re.sub(r'Z -?\d+ ?', '', s)
 
-        # Вставки и непечатные символы
-        s = s.replace('[', '').replace(']', '').strip()
+        return self.ascii_to_unicode(s)
+
+    def get_reg(self, s):
+        # Знаки препинания (для лемматизатора)
+        for sign in '.,:;?!':
+            s = s.replace(sign, '')
+
+        # Вставки и разрывы
+        s = s.replace('[', '').replace(']', '').replace(r'%', '').replace('&', '').replace('\\', '')
+        s = re.sub(r'Z -?\d+ ?', '', s)
+        s = s.strip()
 
         # Упрощение графики и нормализация
         if hasattr(self, 'ana'):
@@ -162,8 +157,18 @@ class Token(object):
             if not any(self.pos.endswith(spec) for spec in ('/в', '/н', '/п', '/ср')):
                 self.pos = self.pos.split('/')[-1]
 
-        self.orig = self.get_orig()
-        self.reg = self.get_reg()
+        if __name__ == '__main__':
+            if '<' in self.src:
+                self.orig = self.get_orig(self.src[:self.src.index('<') - 1])
+                self.corr = self.get_corr(self.src[self.src.index('<') + 1:self.src.index('>')])
+            else:
+                self.orig = self.get_orig(self.src)
+                self.corr = None
+
+        if '<' in self.src:
+            self.reg = self.get_reg(self.src[self.src.index('<') + 1:self.src.index('>')])
+        else:
+            self.reg = self.get_reg(self.src)
 
         if hasattr(self, 'ana') and self.ana[0] and not self.ana[0].isnumeric():
             # stem - кортеж из основы до и после модификаций
@@ -183,7 +188,12 @@ class Token(object):
             else:
                 return '<num><w xml:id="%s" reg="%s" src="%s">%s</w></num>' % (self.token_id, self.reg, src, self.orig)
 
-        return '<w xml:id="%s"%s%s reg="%s" src="%s">%s</w>' % (self.token_id, ana, lemma, self.reg, src, self.orig)
+        s = '<w xml:id="%s"%s%s reg="%s" src="%s">%s' % (self.token_id, ana, lemma, self.reg, src, self.orig)
+
+        if self.corr is not None:
+            s += '<note type="corr">%s</note>' % self.corr
+
+        return s + '</w>'
 
 
 def process(fn):
