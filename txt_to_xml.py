@@ -201,8 +201,8 @@ def process(fn):
     def split_block(mo, s):
         if mo:
             return s[:mo.start()].strip(), s[mo.start():].strip()
-        else:
-            return s, ''
+
+        return s, ''
 
     inpt = open(fn + '.csv', mode='r', encoding='utf-8')
     reader = csv.reader(inpt, delimiter='\t')
@@ -214,7 +214,6 @@ def process(fn):
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
   <teiHeader type="text">
     <fileDesc>
-
       <titleStmt>
         <title>%s</title>''' % data['title'])
 
@@ -227,19 +226,17 @@ def process(fn):
 
     otpt.write('''
       </titleStmt>
-
       <publicationStmt>
         <publisher>%s</publisher>
         <pubPlace>%s</pubPlace>
         <date>%s</date>
         <idno type="ISBN">%s</idno>
-      </publicationStmt>\n''' % tuple(data['pub']))
+      </publicationStmt>''' % tuple(data['pub']))
 
     otpt.write('''
       <sourceDesc>
         <bibl>%s</bibl>
       </sourceDesc>
-
     </fileDesc>
   </teiHeader>
   <text>
@@ -251,18 +248,12 @@ def process(fn):
 
         # Расчленяем строку-словоформу на три блока (обязательно наличие хотя бы одного): 1) саму словоформу,
         # 2) висячие (конечные) знаки препинания и 3) висячие разрывы. Порядок именно такой: ср. 'МIРЪ. Z 27'
-        pc_mo = re.search('(?<![%s#])[%s]+' % (2 * ('.,:;?!',)), form)
+        br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', form)
+        form, br = split_block(br_mo, form)
+        pc_mo = re.search('[.,:;?!]+$', form)
         form, pc = split_block(pc_mo, form)
 
-        if pc:
-            br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', pc)
-            pc, br = split_block(br_mo, pc)
-        else:
-            br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', form)
-            form, br = split_block(br_mo, form)
-
         tokens = []
-
         # Обработка словоформы (если она есть)
         if form:
             if len(row) == 7:
@@ -293,7 +284,7 @@ def process(fn):
 
             # Если в рукописи есть колонки, то разрыв колонки обозначает переход ко второй,
             # разрыв страницы - обновление нумерации и переход к первой. Третьей не дано
-            elif '\\' in br or re.search(r'Z -?\d+ ?', br):
+            elif '\\' in br or 'Z' in br:
                 if '\\' in br:
                     data['col'] = 'b'
                 else:
