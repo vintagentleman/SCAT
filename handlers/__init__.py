@@ -81,7 +81,7 @@ class Pron(Gram):
         if self.pers != 'возвр':
             self.num = t.ana[4].split('/')[-1]
         else:
-            self.num = ''
+            self.num = '_'
 
 
 class Verb(Gram):
@@ -105,26 +105,26 @@ class Verb(Gram):
 
             if t.ana[3].isnumeric():
                 self.pers = t.ana[3]
-                self.gen = ''
+                self.gen = '_'
             else:
-                self.pers = ''
+                self.pers = '_'
                 self.gen = t.ana[3]
 
             self.num = t.ana[4].split('/')[-1]
 
             if t.ana[5].isnumeric():
-                self.role = ''
+                self.role = '_'
                 self.cls = t.ana[5]
             else:
                 self.role = t.ana[5]
-                self.cls = ''
+                self.cls = '_'
 
         elif self.mood == 'сосл':
             if t.ana[2].isnumeric():
                 self.pers = t.ana[2]
-                self.gen = ''
+                self.gen = '_'
             else:
-                self.pers = ''
+                self.pers = '_'
                 self.gen = t.ana[2]
 
             self.num = t.ana[3].split('/')[-1]
