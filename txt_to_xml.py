@@ -78,18 +78,17 @@ class Token(object):
         return self.ascii_to_unicode(s)
 
     def get_reg(self, s):
-        # Знаки препинания (для лемматизатора)
-        for sign in '.,:;?!':
+        # Знаки препинания и разрывы
+        for sign in '.,:;?![]':
             s = s.replace(sign, '')
 
-        # Вставки и разрывы
-        s = s.replace('[', '').replace(']', '').replace(r'%', '').replace('&', '').replace('\\', '')
+        s = s.replace(r'%', '').replace('&', '').replace('\\', '')
         s = re.sub(r'Z -?\d+ ?', '', s)
         s = s.strip()
 
         # Упрощение графики и нормализация
         if hasattr(self, 'ana'):
-            # Цифирь заменяем арабскими цифрами
+            # Цифирь заменяем условным обозначением
             if not self.ana[0].isnumeric():
                 # Цифирные прилагательные типа '$ЗПF#ГО' иногда размечаются (непоследовательно)
                 if self.ana[0] == 'числ/п' and '#' in s:
@@ -98,7 +97,7 @@ class Token(object):
                     return tools.normalise(s, self.ana[0], self.ana[5])
 
             else:
-                return self.ana[0]
+                return '@card@'
         else:
             return tools.normalise(s, '', '')
 
@@ -146,9 +145,9 @@ class Token(object):
             else:
                 return num_pron_imp.main(self)
 
-    def __init__(self, src, token_id, ana=None):
+    def __init__(self, src, xml_id, ana=None):
         self.src = tools.replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
-        self.token_id = token_id
+        self.xml_id = xml_id
         self.pb = re.search(r'Z (-?\d+) ?', self.src)
 
         if ana:
@@ -178,17 +177,15 @@ class Token(object):
 
     def __repr__(self):
         ana = lemma = ''
+        reg = self.reg.lower()
         src = self.src.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
         if hasattr(self, 'ana'):
-            if not self.ana[0].isnumeric():
-                ana = ' ana="%s"' % ';'.join(item for item in self.ana if item)
-                if hasattr(self, 'lemma'):
-                    lemma = ' lemma="%s"' % self.lemma
-            else:
-                return '<num><w xml:id="%s" reg="%s" src="%s">%s</w></num>' % (self.token_id, self.reg, src, self.orig)
+            ana = ' ana="%s"' % ';'.join(item for item in self.ana if item)
+            if hasattr(self, 'lemma'):
+                lemma = ' lemma="%s"' % self.lemma.lower()
 
-        s = '<w xml:id="%s"%s%s reg="%s" src="%s">%s' % (self.token_id, ana, lemma, self.reg, src, self.orig)
+        s = ('<w xml:id="%s"' + ana + lemma + ' reg="%s" src="%s">%s') % (self.xml_id, reg, src, self.orig)
 
         if self.corr is not None:
             s += '<note type="corr">%s</note>' % self.corr
@@ -250,7 +247,7 @@ def process(fn):
         # 2) висячие (конечные) знаки препинания и 3) висячие разрывы. Порядок именно такой: ср. 'МIРЪ. Z 27'
         br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', form)
         form, br = split_block(br_mo, form)
-        pc_mo = re.search('[.,:;?!]+$', form)
+        pc_mo = re.search('[.,:;?![\]]+$', form)
         form, pc = split_block(pc_mo, form)
 
         tokens = []

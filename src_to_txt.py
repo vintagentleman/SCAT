@@ -7,9 +7,10 @@ from lib import letter_values
 
 def parse_line(line):
     line = tools.replace_chars(line, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
-
     nums = line[line.rfind('/') + 1:].split()
     line = line[:line.rfind('/')].split()
+
+    pc = re.compile('[.,:;?![\]]+')
     j = 0
 
     while j < len(line):
@@ -37,17 +38,17 @@ def parse_line(line):
             continue
 
         # Типичный случай пунктуации слева - '.*.' (цифирь)
-        pc = re.search('^[.,:;?!]+?', line[j])
-        if pc and len(pc.group()) != len(line[j]):
-            line.insert(j, line[j][:pc.end()])
-            line[j + 1] = line[j + 1][pc.end():]
+        mo = pc.match(line[j])
+        if mo and len(mo.group()) != len(line[j]):
+            line.insert(j, line[j][:mo.end()])
+            line[j + 1] = line[j + 1][mo.end():]
             j += 1
 
         # Нормальная пунктуация (справа)
-        pc = re.search('(?<!^)[.,:;?!]+?', line[j])
-        if pc and len(pc.group()) != len(line[j]):
-            line.insert(j + 1, line[j][pc.start():])
-            line[j] = line[j][:pc.start()]
+        mo = pc.search(line[j])
+        if mo and len(mo.group()) != len(line[j]):
+            line.insert(j + 1, line[j][mo.start():])
+            line[j] = line[j][:mo.start()]
             j += 1
 
         # Висячие разрывы
