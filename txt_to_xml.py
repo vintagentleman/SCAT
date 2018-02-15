@@ -79,7 +79,7 @@ class Token(object):
 
     def get_reg(self, s):
         # Знаки препинания и разрывы
-        for sign in '.,:;?![]':
+        for sign in '.,:;[]':
             s = s.replace(sign, '')
 
         s = s.replace(r'%', '').replace('&', '').replace('\\', '')
@@ -97,7 +97,7 @@ class Token(object):
                     return tools.normalise(s, self.ana[0], self.ana[5])
 
             else:
-                return '@card@'
+                return '@CARD@'
         else:
             return tools.normalise(s, '', '')
 
@@ -195,12 +195,6 @@ class Token(object):
 
 def process(fn):
 
-    def split_block(mo, s):
-        if mo:
-            return s[:mo.start()].strip(), s[mo.start():].strip()
-
-        return s, ''
-
     inpt = open(fn + '.csv', mode='r', encoding='utf-8')
     reader = csv.reader(inpt, delimiter='\t')
     os.chdir(root + '\\xml')
@@ -242,16 +236,29 @@ def process(fn):
 
     for i, row in enumerate(reader):
         form = row[0].strip()
-
-        # Расчленяем строку-словоформу на три блока (обязательно наличие хотя бы одного): 1) саму словоформу,
-        # 2) висячие (конечные) знаки препинания и 3) висячие разрывы. Порядок именно такой: ср. 'МIРЪ. Z 27'
-        br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', form)
-        form, br = split_block(br_mo, form)
-        pc_mo = re.search('[.,:;?![\]]+$', form)
-        form, pc = split_block(pc_mo, form)
-
         tokens = []
-        # Обработка словоформы (если она есть)
+
+        # Расчленяем словоформу на четыре блока (всегда обязательно наличествует по крайней мере один):
+        # 1) начальные знаки препинания - это м. б. только '[' (символ начала вставки), 2) сама словоформа,
+        # 3) висячие (конечные) знаки препинания и 4) висячие разрывы. Порядок именно такой: ср. '[МIРЪ.] Z 27'
+        pc_l = br = pc_r = ''
+
+        pc_l_mo = re.search('^[.,:;[\]]+', form)
+        if pc_l_mo:
+            form, pc_l = form[pc_l_mo.end():].strip(), form[:pc_l_mo.end()].strip()
+
+        br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', form)
+        if br_mo:
+            form, br = form[:br_mo.start()].strip(), form[br_mo.start():].strip()
+
+        pc_r_mo = re.search('[.,:;[\]]+$', form)
+        if pc_r_mo:
+            form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
+
+        if pc_l:
+            tokens += ['<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc_l)]
+            xmlid += 1
+
         if form:
             if len(row) == 7:
                 # Словоформа плюс разметка
@@ -266,9 +273,8 @@ def process(fn):
             tokens += [token]
             xmlid += 1
 
-        # Далее пунктуация и разрывы
-        if pc:
-            tokens += ['<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc)]
+        if pc_r:
+            tokens += ['<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc_r)]
             xmlid += 1
 
         if br:

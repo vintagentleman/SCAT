@@ -10,7 +10,7 @@ def parse_line(line):
     nums = line[line.rfind('/') + 1:].split()
     line = line[:line.rfind('/')].split()
 
-    pc = re.compile('[.,:;?![\]]+')
+    pc = re.compile('[.,:;[\]]+')
     j = 0
 
     while j < len(line):
