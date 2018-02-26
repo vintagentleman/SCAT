@@ -8,34 +8,37 @@ from txt_to_xml import Token
 
 
 def process(f):
+    reader = csv.reader(f, delimiter='\t')
 
-    def split_block(mo, s):
-        if mo:
-            return s[:mo.start()].strip(), s[mo.start():].strip()
+    for i, items in enumerate(reader):
+        form = items[0].strip()
 
-        return s, ''
+        # Делаем разбиение (по тому же принципу, что и XML)
+        pc_l = br = pc_r = ''
 
-    def setdef(obj, name):
-        try:
-            return getattr(obj, name)
-        except AttributeError:
-            return '_'
+        pc_l_mo = re.search('^[.,:;[\]]+', form)
+        if pc_l_mo:
+            form, pc_l = form[pc_l_mo.end():].strip(), form[:pc_l_mo.end()].strip()
 
-    for i, line in enumerate(f):
-        items = [item.strip() for item in line.split(sep='\t')]
-        form = items[0]
-
-        # Делаем разбиение (по тому же принципу, что и для XML)
         br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', form)
-        form, br = split_block(br_mo, form)
-        pc_mo = re.search('[.,:;?!]+$', form)
-        form, pc = split_block(pc_mo, form)
+        if br_mo:
+            form, br = form[:br_mo.start()].strip(), form[br_mo.start():].strip()
+
+        pc_r_mo = re.search('[.,:;[\]]+$', form)
+        if pc_r_mo:
+            form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
+
+        if pc_l:
+            if ':' in pc_r or ';' in pc_r:
+                yield 'TR,_,_,_'
+            else:
+                yield 'PC,_,_,_'
 
         if form:
             if not items[1]:
-                yield 'ZZ,_,_,_,_'
+                yield 'ZZ,_,_,_'
             elif items[1].isnumeric():
-                yield 'NM,_,_,_,_'
+                yield 'NM,_,_,_'
             else:
                 t = Token(form, '%s_%d' % (file[:-4], i + 1), [items[j] for j in range(1, 7)])
 
@@ -54,13 +57,13 @@ def process(f):
                     else:
                         gr = handlers.Nom(t)
 
-                # Тегсет: 1) часть речи, 2) падеж, 3) число, 4) род, 5) лицо
-                yield ','.join([setdef(gr, tag) for tag in ('pos', 'case', 'num', 'gen', 'pers')])
+                yield ','.join([getattr(gr, tag, '_') for tag in ('pos', 'case', 'num', 'pers')])
 
-        if pc:
-            yield 'PC,_,_,_,_'
-        # if br:
-        #     yield 'BR,_,_,_,_'
+        if pc_r:
+            if ':' in pc_r or ';' in pc_r:
+                yield 'TR,_,_,_'
+            else:
+                yield 'PC,_,_,_'
 
 
 if __name__ == '__main__':
@@ -69,20 +72,27 @@ if __name__ == '__main__':
     os.chdir(os.getcwd() + '\\txt')
     files = glob.glob('*.csv')
     trig_dict = defaultdict(int)
+    triple = list()
 
     for file in files:
         fo = open(file, mode='r', encoding='utf-8')
-        triple = list()
+        triple.clear()
 
         for tagset in process(fo):
+            if tagset == 'союз,_,_,_' and triple and triple[-1] == 'PC,_,_,_':
+                triple.clear()
+
             triple.append(tagset)
 
-            if len(triple) < 3:
+            if len(triple) > 3:
+                del triple[0]
+            elif len(triple) < 3:
                 continue
-            elif len(triple) > 3:
-                triple = triple[1:]
 
             trig_dict[';'.join(triple)] += 1
+
+            if tagset == 'TR,_,_,_':
+                triple.clear()
 
         fo.close()
 
