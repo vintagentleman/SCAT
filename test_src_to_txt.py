@@ -5,7 +5,7 @@ import src_to_txt
 class TestParsing(unittest.TestCase):
 
     def test_parse_line(self):
-        result = src_to_txt.parse_line('И СЛЫША МАZ -26 НIЕМЪ СЛО(в).;& Z -22 *СКАZ -19 ЗА&ЮЩЕЕ .*. БЛГОZ 23 ВО(Л)СТВО#, И ЖИ(Т)Е, МАZ -26 НIЕМЪ/    А# Б#')
+        result = src_to_txt.parse_line('И СЛЫША МАZ -26 НIЕМЪ СЛО(в).;& Z -22 *СКАZ -19 ЗА&ЮЩЕЕ БЛГОZ 23 ВО(Л)СТВО#, И ЖИ(Т)Е, МАZ -26 НIЕМЪ/')
         self.assertEqual(result, (
             [
                 'И',
@@ -16,9 +16,6 @@ class TestParsing(unittest.TestCase):
                 '&',
                 'Z -22',
                 '*СКАZ -19 ЗА&ЮЩЕЕ',
-                '.',
-                '*',
-                '.',
                 'БЛГОZ 23 ВО(Л)СТВО#',
                 ',',
                 'И',
@@ -26,10 +23,7 @@ class TestParsing(unittest.TestCase):
                 ',',
                 'МАZ -26 НIЕМЪ',
             ],
-            [
-                'А#',
-                'Б#'
-            ]))
+            []))
 
         result = src_to_txt.parse_line('И СЛЫША МАZ -26 НIЕМЪ ЯКW ГЛА(с) ЗВОНRЩЬ В ТОИ ПGСТЫНI& НА РЕЦ+ *ГЛGШИЦ+./')
         self.assertEqual(result, (
@@ -47,7 +41,8 @@ class TestParsing(unittest.TestCase):
                 'НА',
                 'РЕЦ+',
                 '*ГЛGШИЦ+',
-                '.'],
+                '.'
+            ],
             []))
 
     def test_parse_edit(self):
@@ -62,8 +57,36 @@ class TestParsing(unittest.TestCase):
                 'ВИД+ЛИ',
                 '~РАZ 449 ЗD(М)МО(М) <РАZ 449 ЗDМО(М)>',
                 'БЛЖННА(г)#',
-                '&'],
+                '&'
+            ],
             []))
+
+    def test_parse_num(self):
+        result = src_to_txt.parse_line('*. Л+(т) .* .. М(с)ЦЪ, НЕ(Д).. *.  ДНЬ# .. */    $SЦL#,ТНОЕ ВI#..ЫИ НВ# А#')
+        self.assertEqual(result, (
+            [
+                '*',
+                '.',
+                'Л+(т)',
+                '.',
+                '*',
+                '..',
+                'М(с)ЦЪ',
+                ',',
+                'НЕ(Д)',
+                '..',
+                '*',
+                '.',
+                'ДНЬ#',
+                '..',
+                '*',
+            ],
+            [
+                '$SЦL#,ТНОЕ',
+                'ВI#..ЫИ',
+                'НВ#',
+                'А#'
+            ]))
 
 
 class TestNumbering(unittest.TestCase):

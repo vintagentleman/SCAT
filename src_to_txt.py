@@ -10,41 +10,39 @@ def parse_line(line):
     nums = line[line.rfind('/') + 1:].split()
     line = line[:line.rfind('/')].split()
 
-    pc = re.compile('[.,:;[\]]+')
+    pc = re.compile(r'[.,:;[\]]+')
     j = 0
 
     while j < len(line):
-        # Сначала собираем вместе токены из множества кусков:
-        # ошибочные написания и межстраничные разрывы
+        # Собираем токены из множества кусков; начинаем с межстраничных разрывов
+        if line[j] == 'Z':
+            line[j] = '%s %s' % (line[j], line[j + 1])
+            del line[j + 1]
+
+        # Разрывы *до* ошибок, ибо бывает такое: '~АБВZ -123 ГДЖ <АБВZ -123 ГДЕ>'
+        elif line[j].endswith('Z'):
+            line[j] = '%s %s %s' % (line[j], line[j + 1], line[j + 2])
+            del line[j + 1:j + 3]
+
+        # Токены из множества кусков: ошибочные написания
         if len(line) > j + 1 and line[j + 1].startswith('<'):
             corr = line[j + 1]
             del line[j + 1]
 
-            # Правки могут быть неоднословные
+            # Бывают и неоднословные
             while '>' not in corr:
                 corr += ' ' + line[j + 1]
                 del line[j + 1]
 
             line[j] = '%s %s' % (line[j], corr)
 
-        if line[j] == 'Z':
-            line[j] = '%s %s' % (line[j], line[j + 1])
-            del line[j + 1]
-
-        elif line[j].endswith('Z'):
-            line[j] = '%s %s %s' % (line[j], line[j + 1], line[j + 2])
-            del line[j + 1:j + 3]
-            # '~АБВZ -123 ГДЖ <АБВZ -123 ГДЕ>'
-            continue
-
-        # Типичный случай пунктуации слева - '.*.' (цифирь)
+        # Отклеиваем пунктуацию слева
         mo = pc.match(line[j])
         if mo and len(mo.group()) != len(line[j]):
             line.insert(j, line[j][:mo.end()])
-            line[j + 1] = line[j + 1][mo.end():]
             j += 1
-
-        # Нормальная пунктуация (справа)
+            line[j] = line[j][mo.end():]
+        # Теперь справа
         mo = pc.search(line[j])
         if mo and len(mo.group()) != len(line[j]):
             line.insert(j + 1, line[j][mo.start():])
