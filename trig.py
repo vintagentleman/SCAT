@@ -2,7 +2,8 @@ import os
 import re
 import csv
 import glob
-from collections import defaultdict
+from collections import Counter
+from nltk.util import ngrams
 import handlers
 from txt_to_xml import Token
 
@@ -10,7 +11,7 @@ from txt_to_xml import Token
 def process(f):
     reader = csv.reader(f, delimiter='\t')
 
-    for i, items in enumerate(reader):
+    for j, items in enumerate(reader):
         form = items[0].strip()
 
         # Делаем разбиение (по тому же принципу, что и XML)
@@ -29,10 +30,7 @@ def process(f):
             form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
 
         if pc_l:
-            if ':' in pc_r or ';' in pc_r:
-                yield 'TR,_,_,_'
-            else:
-                yield 'PC,_,_,_'
+            yield 'PC,_,_,_'
 
         if form:
             if not items[1]:
@@ -40,7 +38,7 @@ def process(f):
             elif items[1].isnumeric():
                 yield 'NM,_,_,_'
             else:
-                t = Token(form, '%s_%d' % (file[:-4], i + 1), [items[j] for j in range(1, 7)])
+                t = Token(form, '%s_%d' % (file[:-4], j + 1), [items[j] for j in range(1, 7)])
 
                 if t.pos != 'мест':
                     if t.pos in ('сущ', 'прил', 'прил/ср', 'числ', 'числ/п'):
@@ -60,10 +58,7 @@ def process(f):
                 yield ','.join([getattr(gr, tag, '_') for tag in ('pos', 'case', 'num', 'pers')])
 
         if pc_r:
-            if ':' in pc_r or ';' in pc_r:
-                yield 'TR,_,_,_'
-            else:
-                yield 'PC,_,_,_'
+            yield 'PC,_,_,_'
 
 
 if __name__ == '__main__':
@@ -71,32 +66,34 @@ if __name__ == '__main__':
     writer = csv.writer(out, delimiter='\t')
     os.chdir(os.getcwd() + '\\txt')
     files = glob.glob('*.csv')
-    trig_dict = defaultdict(int)
-    triple = list()
+    trig_dict = Counter()
 
     for file in files:
         fo = open(file, mode='r', encoding='utf-8')
-        triple.clear()
+        tokens = list(process(fo))
 
-        for tagset in process(fo):
-            if tagset == 'союз,_,_,_' and triple and triple[-1] == 'PC,_,_,_':
-                triple.clear()
-
-            triple.append(tagset)
-
-            if len(triple) > 3:
-                del triple[0]
-            elif len(triple) < 3:
-                continue
-
-            trig_dict[';'.join(triple)] += 1
-
-            if tagset == 'TR,_,_,_':
-                triple.clear()
+        for trig in ngrams(tokens, 3):
+            trig_dict[trig] += 1
 
         fo.close()
 
-    for pair in sorted(trig_dict.items(), key=lambda x: -x[1]):
-        writer.writerow(pair[0].split(';') + [pair[1]])
+    freq = rank = counter = 0
+    for i, pair in enumerate(trig_dict.most_common()):
+        # Если частота изменилась, пересчитываем её встречаемость (в первый раз - всегда)
+        if pair[1] != freq:
+            counter = list(trig_dict.values()).count(pair[1])
+
+        # Если частота - гапакс, то ранг считается просто: порядковый номер + поправка
+        if counter == 1:
+            rank = i + 1
+        # Если нет *и* частота новая (т. е. первая в диапазоне равных), то считаем
+        # по-сложному. В противном случае не пересчитываем - ранг остаётся прежний
+        elif pair[1] != freq:
+            rank = i + 1 + (counter - 1) / 2
+            if rank.is_integer():
+                rank = int(rank)
+
+        writer.writerow([rank] + list(pair[0]) + [pair[1]])
+        freq = pair[1]
 
     out.close()
