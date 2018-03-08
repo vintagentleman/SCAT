@@ -27,15 +27,15 @@ def process(items):
         form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
 
     if pc_l:
-        yield 'PC,_,_,_'
+        yield pc_l, 'PC,_,_,_'
 
     if form:
         if not items[1]:
-            yield 'ZZ,_,_,_'
+            yield form, 'ZZ,_,_,_'
         elif items[1].isnumeric():
-            yield 'NM,_,_,_'
+            yield form, 'NM,_,_,_'
         else:
-            t = Token(form, file[:-4], [items[j] for j in range(1, 7)])
+            t = Token(form, file[:-4], [items[j].strip() for j in range(1, 7)])
 
             if t.pos != 'мест':
                 if t.pos in ('сущ', 'прил', 'прил/ср', 'числ', 'числ/п'):
@@ -52,34 +52,42 @@ def process(items):
                 else:
                     gr = handlers.Nom(t)
 
-            yield ','.join([getattr(gr, tag, '_') for tag in ('pos', 'case', 'num', 'pers')])
+            yield form, ','.join([getattr(gr, tag, '_') for tag in ('pos', 'case', 'num', 'pers')])
 
     if pc_r:
-        yield 'PC,_,_,_'
+        yield pc_r, 'PC,_,_,_'
 
 
 if __name__ == '__main__':
-    otpt = open('trigrams.csv', mode='w', encoding='utf-8', newline='')
-    writer = csv.writer(otpt, delimiter='\t')
+    trig_f = open('trigrams.csv', mode='w', encoding='utf-8', newline='')
+    trig_w = csv.writer(trig_f, delimiter='\t')
     os.chdir(os.getcwd() + '\\txt')
     files = glob.glob('*.csv')
 
     trig_dict = Counter()
     freq = rank = counter = 0
 
-    # Сборка словаря триграмм
+    # Сборка словаря триграмм и попутное создание упрощённых файлов
     for file in files:
         inpt = open(file, mode='r', encoding='utf-8')
-        reader = csv.reader(inpt, delimiter='\t')
-        tokens = list()
+        otpt = open(file[:-3] + 'txt', mode='w', encoding='utf-8', newline='')
+        inpt_r = csv.reader(inpt, delimiter='\t')
+        otpt_w = csv.writer(otpt, delimiter='\t')
 
-        for line in reader:
-            tokens.extend(list(process(line)))
+        tagsets = list()
 
-        for trig in ngrams(tokens, 3):
+        for line in inpt_r:
+            result = process(line)
+
+            for pair in result:
+                otpt_w.writerow(list(pair))
+                tagsets.append(pair[1])
+
+        for trig in ngrams(tagsets, 3):
             trig_dict[trig] += 1
 
         inpt.close()
+        otpt.close()
 
     for i, pair in enumerate(trig_dict.most_common()):
         # Если частота изменилась, пересчитываем её встречаемость (в первый раз - всегда)
@@ -94,7 +102,7 @@ if __name__ == '__main__':
         elif pair[1] != freq:
             rank = i + 1 + (counter - 1) / 2
 
-        writer.writerow(list(pair[0]) + [pair[1], rank])
+        trig_w.writerow(list(pair[0]) + [pair[1], rank])
         freq = pair[1]
 
-    otpt.close()
+    trig_f.close()
