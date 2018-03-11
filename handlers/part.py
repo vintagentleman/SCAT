@@ -11,10 +11,10 @@ def act_past(gr):
     else:
         s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, gr.gen), lib.pron_infl)
 
-    s_new = s_old
-
-    if s_new == 'NONE':
+    if s_old == 'NONE':
         return ('', 'NONE'), ''
+    else:
+        s_new = s_old
 
     # Удаление словоизменительных суффиксов
     suff = re.search('В$|В?[ЪЬ]?Ш$', s_new)
@@ -34,12 +34,10 @@ def act_past(gr):
     if infl:
         return (s_old, s_modif), infl
 
-    jot = bool(s_new.endswith(tuple('ЛНРЖЧШЩ')) or s_new.endswith(('ЖД', 'ШТ')))
-
     # Сочетания с йотом
-    if jot:
+    if s_new.endswith(('Л', 'Н', 'Р', 'Ж', 'ЖД', 'Ч', 'Ш', 'ШТ', 'Щ')):
         s_new = tools.de_jot(s_new) + 'И'
-    # 3*-й класс
+    # 4 класс
     elif s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
         s_new += 'НУ'
 
@@ -53,10 +51,10 @@ def pas_past(gr):
     else:
         s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, gr.gen), lib.pron_infl)
 
-    s_new = s_old
-
-    if s_new == 'NONE':
+    if s_old == 'NONE':
         return ('', 'NONE'), ''
+    else:
+        s_new = s_old
 
     # Удаление словоизменительных суффиксов
     suff = re.search('Е?Н?Н$|Т$', s_new)
@@ -68,15 +66,23 @@ def pas_past(gr):
     if infl:
         return (s_old, s_modif), infl
 
-    jot = bool(s_new.endswith(tuple('ЛНРЖЧШЩ')) or s_new.endswith(('ЖД', 'ШТ')))
-
     # Сочетания с йотом
-    if jot:
+    if s_new.endswith(('Л', 'Н', 'Р', 'Ж', 'ЖД', 'Ч', 'Ш', 'ШТ', 'Щ')):
         s_new = tools.de_jot(s_new) + 'И'
-    # TODO -ЪВ- (-ОВ-) // -Ы-
+
+    # Чередование /u:/: 'вдохновенный', 'проникновенный'; 'омовенный', 'незабвенный'. Но - 'благословенный'
     elif suff and suff.group().startswith('ЕН'):
-        s_new += 'И'
-    # 3*-й класс
+        mo = re.search('[ОЪ]?В$', s_new)
+
+        if not s_new.endswith('СЛОВ') and mo:
+            if s_new[-1] == 'Н':
+                s_new = s_new[:-len(mo.group())] + 'У'
+            else:
+                s_new = s_new[:-len(mo.group())] + 'Ы'
+        else:
+            s_new += 'И'
+
+    # 4 класс
     elif s_new[-1] in lib.cons or s_new in ('ВЯ', 'СТЫ'):
         s_new += 'НУ'
 
