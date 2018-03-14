@@ -2,6 +2,7 @@ import os
 import re
 import csv
 import glob
+import json
 from collections import Counter
 from nltk.util import ngrams
 import handlers
@@ -27,7 +28,7 @@ def process(items):
         form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
 
     if pc_l:
-        yield pc_l, 'PC,_,_,_'
+        yield pc_l, 'PM,_,_,_'
 
     if form:
         if not items[1]:
@@ -52,13 +53,14 @@ def process(items):
                 else:
                     gr = handlers.Nom(t)
 
-            yield form, ','.join([getattr(gr, tag, '_') for tag in ('pos', 'case', 'num', 'pers')])
+            yield form, ','.join([tag_d[tag].get(getattr(gr, tag, '_'), '_') for tag in ('pos', 'case', 'num', 'pers')])
 
     if pc_r:
-        yield pc_r, 'PC,_,_,_'
+        yield pc_r, 'PM,_,_,_'
 
 
 if __name__ == '__main__':
+    tag_d = json.load(open('tags.json', mode='r', encoding='utf-8'))
     trig_f = open('trigrams.csv', mode='w', encoding='utf-8', newline='')
     trig_w = csv.writer(trig_f, delimiter='\t')
     os.chdir(os.getcwd() + '\\txt')

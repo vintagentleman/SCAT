@@ -46,7 +46,7 @@ def main(token):
         return ('', 'NONE'), ''
 
     # Суффиксы сравнительной степени
-    if gr.pos == 'прил/ср':
+    if gr.comp:
         s_new = de_comp_suff(s_new, gr.case, gr.num, gr.gen)
 
     # Плюс-минус

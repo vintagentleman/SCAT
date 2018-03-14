@@ -38,6 +38,10 @@ class Nom(Gram):
             self.zhe = False
             self.neg = False
 
+        self.comp = bool(self.pos == 'прил/ср')
+        if self.comp:
+            self.pos = self.pos[:-3]
+
         # Гласный-пустышка
         if self.form[-1] not in lib.vows:
             self.form += '`'
