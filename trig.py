@@ -32,7 +32,7 @@ def process(items):
 
     if form:
         if not items[1]:
-            yield form, 'ZZ,_,_,_'
+            yield form, 'Zr,_,_,_'
         elif items[1].isnumeric():
             yield form, 'NM,_,_,_'
         else:
@@ -52,6 +52,15 @@ def process(items):
                     gr = handlers.Pron(t)
                 else:
                     gr = handlers.Nom(t)
+
+            if hasattr(gr, 'case') and gr.case == 'зв':
+                gr.case = 'им'
+
+            if hasattr(gr, 'num') and gr.num == 'дв':
+                gr.num = 'мн'
+
+            if gr.pos == 'мест' and hasattr(gr, 'pers'):
+                gr.pers = '_'
 
             yield form, ','.join([tag_d[tag].get(getattr(gr, tag, '_'), '_') for tag in ('pos', 'case', 'num', 'pers')])
 
