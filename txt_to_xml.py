@@ -88,16 +88,15 @@ class Token(object):
 
         # Упрощение графики и нормализация
         if hasattr(self, 'ana'):
-            # Цифирь заменяем условным обозначением
+            # Цифирь заменяется арабскими цифрами
             if not self.ana[0].isnumeric():
                 # Цифирные прилагательные типа '$ЗПF#ГО' иногда размечаются (непоследовательно)
                 if self.ana[0] == 'числ/п' and '#' in s:
                     return s.upper().replace('(', '').replace(')', '')
                 else:
                     return tools.normalise(s, self.ana[0], self.ana[5])
-
             else:
-                return '@CARD@'
+                return self.ana[0]
         else:
             return tools.normalise(s, '', '')
 
@@ -183,8 +182,9 @@ class Token(object):
         reg = self.reg.lower()
         src = self.src.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
-        if hasattr(self, 'ana'):
+        if hasattr(self, 'ana') and not self.ana[0].isnumeric():
             ana = ' ana="%s"' % ';'.join(item for item in self.ana if item)
+
             if hasattr(self, 'lemma'):
                 lemma = ' lemma="%s"' % self.lemma.lower()
 
@@ -193,7 +193,14 @@ class Token(object):
         if self.corr is not None:
             s += '<note type="corr">%s</note>' % self.corr
 
-        return s + '</w>'
+        s += '</w>'
+
+        if '*' in src:
+            s = '<name>' + s + '</name>'
+        elif self.ana[0].isnumeric():
+            s = '<num>' + s + '</num>'
+
+        return s
 
 
 def process(fn):
@@ -206,7 +213,7 @@ def process(fn):
 
     otpt.write('''<?xml version="1.0" encoding="UTF-8"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
-  <teiHeader type="text">
+  <teiHeader>
     <fileDesc>
       <titleStmt>
         <title>%s</title>''' % data['title'])
@@ -259,7 +266,11 @@ def process(fn):
             form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
 
         if pc_l:
-            tokens += ['<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc_l)]
+            token = '<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc_l)
+            if '[' in pc_l:
+                token = '<add place="margin">' + token
+
+            tokens += [token]
             xmlid += 1
 
         if form:
@@ -277,7 +288,11 @@ def process(fn):
             xmlid += 1
 
         if pc_r:
-            tokens += ['<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc_r)]
+            token = '<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc_r)
+            if ']' in pc_r:
+                token += '</add>'
+
+            tokens += [token]
             xmlid += 1
 
         if br:
