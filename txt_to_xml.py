@@ -134,6 +134,9 @@ class Token(object):
                 elif self.pos == 'суп':
                     lemma = lemma[:-1] + 'И'
 
+                elif self.pos.endswith(('/н', '/в')):
+                    self.pos = self.pos[:-2]
+
                 return ('', lemma), ''
 
             else:
