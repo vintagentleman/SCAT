@@ -53,12 +53,6 @@ def process(items):
                 else:
                     gr = handlers.Nom(t)
 
-            if hasattr(gr, 'case') and gr.case == 'зв':
-                gr.case = 'им'
-
-            if hasattr(gr, 'num') and gr.num == 'дв':
-                gr.num = 'мн'
-
             if gr.pos == 'мест' and hasattr(gr, 'pers'):
                 gr.pers = '_'
 
