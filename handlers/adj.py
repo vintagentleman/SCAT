@@ -56,12 +56,9 @@ def main(token):
     if '*' in gr.nb:
         s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
 
-    # Удаление редуцированных в конечном слоге основы (всегда слабом)
-    if (any(tag in gr.nb for tag in ('-о', '-е')) or s_new.endswith('ЕН')
-            and tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
+    # Удаление редуцированных в конечном слоге основы
+    if len(s_new) > 3 and s_new.endswith(('ЕН', 'ОК')) and not s_new.endswith(lib.adj_no_red):
         s_new = s_new[:-2] + s_new[-1]
-
-    # TODO: заменить минус в '-о' и '-е' на плюс и внести в разметку (в таком случае не удалять)
 
     # Возвращение маркера одушевлённости
     if gr.prop:

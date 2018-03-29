@@ -3,53 +3,25 @@ import lib
 import re
 from handlers import Nom
 from handlers.noun import noun_infl
+from handlers.adj import adj_pron_infl
 
 
-def pron_modif(s):
+def stem_modif(s):
 
     if re.match('В[ЪЬ]?С$', s):
         return 'ВЕС'
-
     elif re.match('В[ЪЬ]?Ш$', s):
         return 'ВАШ'
-
     elif re.match('Н[ЪЬ]?Ш$', s):
         return 'НАШ'
-
-    elif re.match('(М|[ТС]В?)$', s):
-        # Чередование `СИИ' // `СЕГО'
-        if s == 'С':
-            return s + 'Е'
-        # Реинтерпретация морфемных границ
-        else:
-            return s + 'О'
-
-    # Чередование `КИИ' // `КОЕГО'
-    elif s == 'КО':
-        return 'К'
-
-    # Предложные формы местоимения `И'
+    elif re.match('(К|М|Т|ОБ|СВ|ТВ)О$', s):
+        return s[:-1]
+    elif s == 'СЕ':
+        return 'С'
     elif s == 'Н':
         return ''
 
     return s
-
-
-def pron_infl(s, decl):
-
-    if decl in ('a', 'o', 'тв'):
-        if s.endswith(lib.vows):
-            return 'И'
-        else:
-            return 'Ъ'
-
-    else:
-        if s.endswith(lib.vows) or s == '':
-            return 'И'
-        elif s.endswith(lib.cons_hush + ('С', 'З')):
-            return 'Ь'
-        else:
-            return 'Ъ'
 
 
 def num_infl(s, decl, gen):
@@ -167,8 +139,7 @@ def main(token):
         return ('', 'NONE'), ''
 
     # Модификация основы
-    if gr.pos == 'мест':
-        s_new = pron_modif(s_new)
+    s_new = stem_modif(s_new)
 
     # Плюс-минус
     s_new = tools.plus_minus(s_new, gr.nb)
@@ -179,12 +150,10 @@ def main(token):
 
     # Нахождение флексии
     if gr.pos == 'мест':
-        for regex in lib.pron_spec:
-            if re.match(regex + '$', s_new):
-                infl = lib.pron_spec[regex]
-                break
+        if s_new in lib.pron_spec:
+            infl = lib.pron_spec[s_new]
         else:
-            infl = pron_infl(s_new, gr.d_old)
+            infl = adj_pron_infl(s_new, gr.d_old)
     else:
         infl = num_infl(s_new, gr.d_old, gr.gen)
 
