@@ -197,7 +197,7 @@ class Token(object):
 
         if '*' in src:
             s = '<name>' + s + '</name>'
-        elif self.ana[0].isnumeric():
+        elif hasattr(self, 'ana') and self.ana[0].isnumeric():
             s = '<num>' + s + '</num>'
 
         return s
