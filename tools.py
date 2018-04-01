@@ -79,14 +79,6 @@ def normalise(string, pos, nb):
 
     string = string.upper()
     string = simplify_graphics(string)
-
-    # 'Безумные' (неэтимологические) еры и ери на концах строки, можем удалять их без разметки
-    # Не трогаем, если 1) они оканчивают словоформу либо 2) входят в состав префиков типа ВЪ- и СЪ-
-    if not ('+ъ' in nb or '+ь' in nb):
-        for yer in ('Ъ&', 'ЪZ', 'Ь&', 'ЬZ'):
-            if yer in string and not (string.endswith(yer) or string[1:].startswith(yer)):
-                string = string.replace(yer, '')
-
     string = modif.modif(string, pos)
 
     if prop:

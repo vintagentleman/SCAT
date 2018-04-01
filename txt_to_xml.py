@@ -253,7 +253,7 @@ def process(fn):
         # 3) висячие (конечные) знаки препинания и 4) висячие разрывы. Порядок именно такой: ср. '[МIРЪ.] Z 27'
         pc_l = br = pc_r = ''
 
-        pc_l_mo = re.search('^[.,:;[\]]+', form)
+        pc_l_mo = re.search('^[.,:;[]+', form)
         if pc_l_mo:
             form, pc_l = form[pc_l_mo.end():].strip(), form[:pc_l_mo.end()].strip()
 
@@ -261,7 +261,7 @@ def process(fn):
         if br_mo:
             form, br = form[:br_mo.start()].strip(), form[br_mo.start():].strip()
 
-        pc_r_mo = re.search('[.,:;[\]]+$', form)
+        pc_r_mo = re.search('[.,:;\]]+$', form)
         if pc_r_mo:
             form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
 
