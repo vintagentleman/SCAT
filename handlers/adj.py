@@ -56,8 +56,8 @@ def main(token):
     if '*' in gr.nb:
         s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
 
-    # Удаление редуцированных в конечном слоге основы
-    if len(s_new) > 3 and s_new.endswith(('ЕН', 'ОК')) and not s_new.endswith(lib.adj_no_red):
+    # Удаление прояснённых редуцированных
+    if '-о' in gr.nb or '-е' in gr.nb:
         s_new = s_new[:-2] + s_new[-1]
 
     # Возвращение маркера одушевлённости

@@ -170,58 +170,11 @@ def de_jot(s):
 
 def plus_minus(s, nb):
 
-    nbl = nb
-    for mark in ('+о', '+е', '-о', '-е', '+ъ', '+ь'):
-        nbl = nbl.replace(mark, '')
+    nbl = nb.replace('+о', '').replace('+е', '').replace('-о', '').replace('-е', '')
 
     if '+' in nbl:
         s += nbl[nbl.index('+') + 1:].upper()
     elif '-' in nbl:
         s = s[:-len(nbl[nbl.index('-') + 1:])]
-
-    return s
-
-
-def reduction_on(pos, new_decl, case, num, gen):
-
-    if pos == 'сущ':
-        if (new_decl in ('a', 'ja') and (case, num) == ('род', 'мн')
-                or new_decl in ('o', 'jo') and gen == 'м' and (case, num) not in (('им', 'ед'), ('вин', 'ед'), ('род', 'мн'))
-                or new_decl in ('o', 'jo') and gen == 'ср' and (case, num) == ('род', 'мн')
-                or new_decl in ('i', 'u') and (case, num) not in (('им', 'ед'), ('вин', 'ед'))
-                or new_decl.startswith('e') and (case, num) not in (('им', 'ед'), ('вин', 'ед'), ('род', 'мн'))
-                or new_decl == 'uu' and (case, num) not in (('им', 'ед'), ('вин', 'ед'), ('род', 'мн'))):
-            return True
-
-    elif pos.startswith('прил'):
-        if (new_decl in ('a', 'ja') and (case, num) == ('род', 'мн')
-                or new_decl in ('o', 'jo') and gen == 'м' and (case, num) in (('им', 'ед'), ('вин', 'ед'), ('род', 'мн'))
-                or new_decl in ('o', 'jo') and gen == 'ср' and (case, num) == ('род', 'мн')):
-            return True
-
-    return False
-
-
-def de_reduce(s, decl, nb):
-
-    if decl in ('a', 'ja'):
-        # 'ОВЕЦЬ' --> 'ОВЦА', 'СУДЕБЪ' --> 'СУДБА'
-        if any(tag in nb for tag in ('-о', '-е')) or s.endswith('ЕЦ'):
-            s = s[:-2] + s[-1]
-
-    else:
-        # 'ПРИБЫТКОМЪ' --> 'ПРИБЫТОКЪ', 'ЗОЛЪ' --> 'ЗЛО'
-        if any(tag in nb for tag in ('+о', '+е', '-о', '-е')):
-
-            if '+о' in nb:
-                s = s[:-1] + 'О' + s[-1]
-            elif '+е' in nb:
-                s = s[:-1] + 'Е' + s[-1]
-            else:
-                s = s[:-2] + s[-1]
-
-        # 'САМОДЕРЖЦА' --> 'САМОДЕРЖЕЦЪ'
-        elif s[-1] == 'Ц' and s[-2] in lib.cons:
-            s = s[:-1] + 'Е' + s[-1]
 
     return s

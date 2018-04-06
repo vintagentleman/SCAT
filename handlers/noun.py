@@ -4,6 +4,43 @@ import tools
 from handlers import Nom
 
 
+def reduced(d, case, num, gen):
+
+    if (
+            d in ('a', 'ja') and (case, num) == ('род', 'мн')
+            or d in ('o', 'jo') and gen == 'м' and (case, num) not in (('им', 'ед'), ('вин', 'ед'), ('род', 'мн'))
+            or d in ('o', 'jo') and gen == 'ср' and (case, num) == ('род', 'мн')
+            or d in ('i', 'u') and (case, num) not in (('им', 'ед'), ('вин', 'ед'))
+            or d.startswith('e') and (case, num) not in (('им', 'ед'), ('вин', 'ед'), ('род', 'мн'))
+            or d == 'uu' and (case, num) not in (('им', 'ед'), ('вин', 'ед'), ('род', 'мн'))
+    ):
+        return True
+
+    return False
+
+
+def de_reduce_manual(s, nb):
+
+    if '+о' in nb:
+        s = s[:-1] + 'О' + s[-1]
+    elif '+е' in nb:
+        s = s[:-1] + 'Е' + s[-1]
+    else:
+        s = s[:-2] + s[-1]
+
+    return s
+
+
+def de_reduce_auto(s, d):
+
+    if d == 'ja' and s[-2] == 'Е':
+        s = s[:-2] + s[-1]
+    elif d == 'jo' and s[-2] in lib.cons:
+        s = s[:-1] + 'Е' + s[-1]
+
+    return s
+
+
 def decl_spec_modif(stem, decl, new_decl, nb):
 
     def de_suffix(s, d, nd):
@@ -178,9 +215,10 @@ def main(token):
         s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
 
     # Прояснение/исчезновение редуцированных
-    if (any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е'))
-            or tools.reduction_on(gr.pos, gr.d_new, gr.case, gr.num, gr.gen)):
-        s_new = tools.de_reduce(s_new, gr.d_old, gr.nb)
+    if any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е')):
+        s_new = de_reduce_manual(s_new, gr.nb)
+    elif s_new[-1] == 'Ц' and reduced(gr.d_new, gr.case, gr.num, gr.gen):
+        s_new = de_reduce_auto(s_new, gr.d_old)
 
     # 'НОВЪ' --> 'НОВГОРОДЪ'; 'ЦАРЬ' --> 'ЦАРГРАДЪ' (?)
     if grd:
