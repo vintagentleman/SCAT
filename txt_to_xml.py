@@ -94,11 +94,11 @@ class Token(object):
                 if self.ana[0] == 'числ/п' and '#' in s:
                     return s.upper().replace('(', '').replace(')', '')
                 else:
-                    return tools.normalise(s, self.ana[0], self.ana[5])
+                    return tools.normalise(s, self.ana[0])
             else:
                 return self.ana[0]
         else:
-            return tools.normalise(s, '', '')
+            return tools.normalise(s, '')
 
     def get_gram(self):
 
