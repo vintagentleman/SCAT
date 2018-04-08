@@ -79,8 +79,9 @@ def aor_simp(gr):
     if s_new.endswith(('ДАД', 'ЖИВ', 'ИД', 'ЫД')):
         s_new = s_new[:-1]
 
-    # Отмена палатализации
-    s_new = tools.de_palat(s_new, gr.pos)
+    # Первая палатализация
+    if s_new[-1] in 'ЧЖШ':
+        s_new = s_new[:-1] + lib.palat_1[s_new[-1]]
 
     # Проблемные классы
     s_modif, infl = cls_cons_modif(s_new)

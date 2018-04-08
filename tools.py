@@ -107,38 +107,6 @@ def find_stem(form, gram_comb, fl_dict):
     return stem
 
 
-def de_palat(s, pos, pair=None):
-    # Для имён номер палатализации не имеет значения
-    if pos not in ('гл', 'прич'):
-
-        if pair == ('jo', 'o'):
-            if s[-1] == 'Ч':
-                return s[:-1] + 'Ц'
-            elif s[-1] == 'Ж':
-                return s[:-1] + 'З'
-            elif s[-1] == 'Ш':
-                return s[:-1] + 'С'
-
-        else:
-            if s[-1] in 'ЧЦ' or s[-2:] == 'СТ':
-                return s[:-1] + 'К'
-            elif s[-1] in 'ЖЗ':
-                return s[:-1] + 'Г'
-            elif s[-1] in 'ШС':
-                return s[:-1] + 'Х'
-
-    # Для глаголов актуальна только вторая
-    else:
-        if s[-1] == 'Ч':
-            return s[:-1] + 'К'
-        elif s[-1] == 'Ж':
-            return s[:-1] + 'Г'
-        elif s[-1] == 'Ш':
-            return s[:-1] + 'Х'
-
-    return s
-
-
 def de_jot(s):
 
     if s.endswith(('БЛ', 'ВЛ', 'МЛ', 'ПЛ', 'ФЛ')):

@@ -52,9 +52,9 @@ def main(token):
     # Плюс-минус
     s_new = tools.plus_minus(s_new, gr.nb)
 
-    # Отмена палатализации
-    if '*' in gr.nb:
-        s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
+    # Вторая палатализация
+    if '*' in gr.nb and s_new[-1] in 'ЦЗСТ':
+        s_new = s_new[:-1] + lib.palat_2[s_new[-1]]
 
     # Удаление прояснённых редуцированных
     if '-о' in gr.nb or '-е' in gr.nb:

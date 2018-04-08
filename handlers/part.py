@@ -62,7 +62,7 @@ def pas_past(gr):
         s_new = s_new[:-len(suff.group())]
 
     # Проблемные классы
-    s_modif, infl = verb.cls_cons_modif(tools.de_palat(s_new, gr.pos))
+    s_modif, infl = verb.cls_cons_modif(s_new[:-1] + lib.palat_1.get(s_new[-1], s_new[-1]))
     if infl:
         return (s_old, s_modif), infl
 

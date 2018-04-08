@@ -55,19 +55,15 @@ def decl_spec_modif(stem, decl, new_decl, nb):
         return s
 
     def add_suffix(s, d):
+        if d == 'en' and not (s.endswith('ЕН') or re.match('Д[ЪЬ]?Н', s)):
+            suf = re.search(lib.them_suff[d], s)
+            if suf:
+                s = s[:-len(suf.group())]
 
-        # Единственное мерзкое исключение
-        if d == 'en' and not s.endswith('ЕН'):
-            if not re.match('Д[ЕЪЬ]?Н', s):
-
-                suf = re.search('[ЪЬ]?Н$', s)
-                if suf:
-                    s = s[:-len(suf.group())]
-
-                s += 'ЕН'
+            s += 'ЕН'
 
         elif d == 'uu' and not s.endswith('ОВ'):
-            suf = re.search('[ЪЬ]?В$', s)
+            suf = re.search(lib.them_suff[d], s)
             if suf:
                 s = s[:-len(suf.group())]
 
@@ -78,8 +74,7 @@ def decl_spec_modif(stem, decl, new_decl, nb):
     # Удаление/добавление тематических суффиксов
     if {decl, new_decl} & {'ent', 'men', 'es', 'er'}:
         stem = de_suffix(stem, decl, new_decl)
-
-    if decl in ('en', 'uu'):
+    elif decl in ('en', 'uu'):
         stem = add_suffix(stem, decl)
 
     # Плюс-минус
@@ -210,9 +205,16 @@ def main(token):
     # Модификации по типам склонения и другие
     s_new = decl_spec_modif(s_new, gr.d_old, gr.d_new, gr.nb)
 
-    # Отмена палатализации
-    if '*' in gr.nb:
-        s_new = tools.de_palat(s_new, gr.pos, (gr.d_old, gr.d_new))
+    # Первая палатализация
+    if s_new[-1] in 'ЧЖШ' and ((gr.case, gr.num, gr.gen) == ('зв', 'ед', 'м') or s_new in ('ОЧ', 'УШ')):
+        if (gr.d_old, gr.d_new) == ('jo', 'o'):
+            s_new = s_new[:-1] + lib.palat_1_jo[s_new[-1]]
+        else:
+            s_new = s_new[:-1] + lib.palat_1[s_new[-1]]
+
+    # Вторая палатализация
+    elif '*' in gr.nb and s_new[-1] in 'ЦЗСТ':
+        s_new = s_new[:-1] + lib.palat_2[s_new[-1]]
 
     # Прояснение/исчезновение редуцированных
     if any(tag in gr.nb for tag in ('+о', '+е', '-о', '-е')):
