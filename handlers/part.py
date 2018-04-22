@@ -75,10 +75,12 @@ def pas_past(gr):
         mo = re.search('[ОЪ]?В$', s_new)
 
         if not s_new.endswith('СЛОВ') and mo:
+            s_new = s_new[:-len(mo.group())]
+
             if s_new[-1] == 'Н':
-                s_new = s_new[:-len(mo.group())] + 'У'
+                s_new += 'У'
             else:
-                s_new = s_new[:-len(mo.group())] + 'Ы'
+                s_new += 'Ы'
         else:
             s_new += 'И'
 

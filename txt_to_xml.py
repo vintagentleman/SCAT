@@ -188,17 +188,15 @@ class Token(object):
             if hasattr(self, 'lemma'):
                 lemma = ' lemma="%s"' % self.lemma.lower()
 
-        s = ('<w xml:id="%s"' + ana + lemma + ' reg="%s" src="%s">%s') % (self.xml_id, reg, src, self.orig)
-
-        if self.corr is not None:
-            s += '<note type="corr">%s</note>' % self.corr
-
-        s += '</w>'
+        s = ('<w xml:id="%s"' + ana + lemma + ' reg="%s" src="%s">%s</w>') % (self.xml_id, reg, src, self.orig)
 
         if '*' in src:
             s = '<name>' + s + '</name>'
         elif hasattr(self, 'ana') and self.ana[0].isnumeric():
             s = '<num>' + s + '</num>'
+
+        if self.corr is not None:
+            s += '<note type="corr">%s</note>' % self.corr
 
         return s
 

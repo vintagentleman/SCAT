@@ -5,7 +5,7 @@ from handlers import Verb
 
 
 def cls_cons_modif(s):
-    # VI.2.а и VII.1 классы: основы на гласный
+    # VII.1 класс
     if re.search('(БЛЮ|БРЕ|ВЕ|КЛА|КЛЯ|КРА|МЕ|ПА|ПЛЕ|СЕ|ЧЕ)$', s):
         return s, 'СТИ'
 
@@ -29,7 +29,7 @@ def cls_cons_modif(s):
             return s, 'ЩИ'
 
     # VI.2.б и VI.2.в классы
-    if re.search('[МПТ][+Е]Р$', s):
+    if re.search('[МПТ][ЕЬ]?Р$', s):
         return s + 'Е', 'ТИ'
     elif re.search('ШИБ$', s):
         return s + 'И', 'ТИ'
