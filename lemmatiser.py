@@ -6,7 +6,7 @@ from txt_to_xml import Token
 
 def process():
     # Все файлы с разметкой в папке со входными данными
-    files = glob.glob('*.txt')
+    files = glob.glob('*.csv')
 
     for file in files:
         f = open(file, mode='r', encoding='utf-8')
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     err = open('errors.csv', mode='w', encoding='utf-8', newline='')
 
     try:
-        os.chdir(os.getcwd() + '\\data')
+        os.chdir(os.getcwd() + '\\grm')
     except FileNotFoundError:
         print('Error: source data directory missing.')
     else:
