@@ -24,19 +24,19 @@ class Nom(Gram):
         if self.prop:
             self.form = self.form[1:]
 
-        # НЕ- и -ЖЕ
+        # НЕ- и -ЖЕ/-ЖДО
         if self.pos == 'мест':
-            self.zhe = bool(self.form.endswith('ЖЕ'))
+            self.zhe = re.search('ЖЕ$|Ж[ЪЬ]?Д[ЕО]$', self.form)
             self.neg = re.match('Н[+ЕИ](?=[КЧ])', self.form)
 
             if self.zhe:
-                self.form = self.form[:-2]
+                self.form = self.form[:-len(self.zhe.group())]
             if self.neg:
-                self.form = self.form[2:]
+                self.form = self.form[len(self.neg.group()):]
 
         else:
-            self.zhe = False
-            self.neg = False
+            self.zhe = None
+            self.neg = None
 
         # Гласный-пустышка
         if self.form[-1] not in lib.vows:

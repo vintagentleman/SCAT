@@ -14,10 +14,10 @@ def stem_modif(s):
         return 'ВАШ'
     elif re.match('Н[ЪЬ]?Ш$', s):
         return 'НАШ'
-    elif re.match('(К|М|Т|ОБ|СВ|ТВ)О$', s):
+    elif re.match('(К|ОБ|Т)О$', s):
         return s[:-1]
-    elif s == 'СЕ':
-        return 'С'
+    elif s == 'С':
+        return 'СЕ'
     elif s == 'Н':
         return ''
 
@@ -49,11 +49,11 @@ def num_infl(s, decl, gen):
 
 def neg(s, gr):
 
-    if gr.neg:
+    if gr.neg is not None:
         return gr.neg.group() + s
 
     # Префикс тут отсечён предлогом
-    elif s in ('КТО', 'ЧТО') and gr.zhe:
+    elif s in ('КТО', 'ЧТО') and gr.zhe is not None:
         return 'НИ' + s
 
     return s
@@ -61,8 +61,8 @@ def neg(s, gr):
 
 def zhe(i, gr):
 
-    if gr.zhe:
-        return i + 'ЖЕ'
+    if gr.zhe is not None:
+        return i + gr.zhe.group()
 
     return i
 
@@ -72,13 +72,17 @@ def main(token):
 
     if gr.pos == 'мест':
         # Проверка на исключительность
-        if re.search('Ж[ЪЬ]?Д[ЕО]$', gr.form):
-            return ('', 'КОЖДО'), ''
+        if re.match('К[ОЪ]$', gr.form):
+            if gr.zhe is not None and 'Д' in gr.zhe.group():
+                return ('', neg('КО', gr)), zhe('', gr)
 
         # Проверка на вопросительность
         if (gr.d_old, gr.case) in lib.pron_interr:
             if re.match(lib.pron_interr[(gr.d_old, gr.case)][0], gr.form):
-                return ('', neg(lib.pron_interr[(gr.d_old, gr.case)][1], gr)), zhe('', gr)
+                if gr.zhe is not None and 'Д' in gr.zhe.group():
+                    return ('', neg('КО', gr)), zhe('', gr)
+                else:
+                    return ('', neg(lib.pron_interr[(gr.d_old, gr.case)][1], gr)), zhe('', gr)
 
     else:
         # Проверка на изменяемость обеих частей
