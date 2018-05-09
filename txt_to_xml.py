@@ -47,10 +47,6 @@ class Token(object):
         # Маркеры собственности и ошибочности (но вставки оставляем)
         s = s.replace('*', '').replace('~', '')
 
-        # Разрыв части внутри слова - невероятно, но подстраховаться не грех
-        if r'%' in s:
-            s = s.replace(r'%', '<milestone/>')
-
         # Разрывов строк внутри одной словоформы может быть несколько
         while '&' in s:
             data['line'] += 1
@@ -66,7 +62,7 @@ class Token(object):
                     data['col'] = 'a'
 
             data['line'] = 1
-            s = re.sub(r'\\|Z -?\d+ ?', '<pb n="%s"/>' % (data['page'] + data.get('col', '')), s)
+            s = re.sub(r'\\|Z -?\d+ ?', '<pb n="%s"/><lb n="1"/>' % (data['page'] + data.get('col', '')), s)
 
         return self.ascii_to_unicode(s)
 
@@ -178,19 +174,17 @@ class Token(object):
                 self.lemma = self.stem[1] + self.fl
 
     def __repr__(self):
-        ana = lemma = ''
-        reg = self.reg.lower()
-        src = self.src.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        s = '<w xml:id="%s"' % self.xml_id
 
         if hasattr(self, 'ana') and not self.ana[0].isnumeric():
-            ana = ' ana="%s"' % ';'.join(item for item in self.ana if item)
+            s += ' ana="%s"' % ';'.join(item for item in self.ana if item)
 
             if hasattr(self, 'lemma'):
-                lemma = ' lemma="%s"' % self.lemma.lower()
+                s += ' lemma="%s"' % self.lemma.lower()
 
-        s = ('<w xml:id="%s"' + ana + lemma + ' reg="%s" src="%s">%s</w>') % (self.xml_id, reg, src, self.orig)
+        s += ' reg="%s" src="%s">%s</w>' % (self.reg.lower(), self.src.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'), self.orig)
 
-        if '*' in src:
+        if '*' in self.src:
             s = '<name>' + s + '</name>'
         elif hasattr(self, 'ana') and self.ana[0].isnumeric():
             s = '<num>' + s + '</num>'
@@ -238,9 +232,8 @@ def process(fn):
       </sourceDesc>
     </fileDesc>
   </teiHeader>
-  <text>
-    <body>
-      <pb n="%s"/>\n''' % (data['bibl'], (data['page'] + data.get('col', ''))))
+  <text><body><ab>
+    <pb n="%s"/><lb n="1"/>\n''' % (data['bibl'], (data['page'] + data.get('col', ''))))
 
     for i, row in enumerate(reader):
         form = row[0].strip()
@@ -263,61 +256,62 @@ def process(fn):
         if pc_r_mo:
             form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
 
+        # --- Пунктуация слева --- #
         if pc_l:
-            token = '<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc_l)
+            token = '<pc xml:id="%s.%s">%s</pc>' % (fn, xmlid, pc_l)
             if '[' in pc_l:
                 token = '<add place="margin">' + token
 
-            tokens += [token]
+            tokens.append(token)
             xmlid += 1
 
+        # --- Словоформа (с разметкой или без) --- #
         if form:
             if len(row) == 7:
-                # Словоформа плюс разметка
-                token = Token(form, '%s_%d' % (fn, xmlid), [row[i].strip() for i in range(1, 7)])
+                token = Token(form, '%s.%d' % (fn, xmlid), [row[i].strip() for i in range(1, 7)])
             elif len(row) == 1:
-                # Только словоформа
-                token = Token(form, '%s_%d' % (fn, xmlid))
+                token = Token(form, '%s.%d' % (fn, xmlid))
             else:
-                print('Warning: corrupt data in line %d.' % (i + 1))
+                print('Warning: corrupt data in file %s, line %d.' % (fn, i + 1))
                 continue
 
-            tokens += [token]
+            tokens.append(token)
             xmlid += 1
 
+        # --- Пунктуация справа --- #
         if pc_r:
-            token = '<pc xml:id="%s_%s">%s</pc>' % (fn, xmlid, pc_r)
+            token = '<pc xml:id="%s.%s">%s</pc>' % (fn, xmlid, pc_r)
             if ']' in pc_r:
                 token += '</add>'
 
-            tokens += [token]
+            tokens.append(token)
             xmlid += 1
 
-        if br:
-            if r'%' in br:
-                tokens += ['<milestone/>']
+        # --- Висячие разрывы --- #
+        if '&' in br:
+            data['line'] += 1
+            tokens += ['<lb n="%d"/>' % data['line']]
 
-            elif '&' in br:
-                data['line'] += 1
-                tokens += ['<lb n="%d"/>' % data['line']]
+        # Если в рукописи есть колонки, то разрыв колонки обозначает переход ко второй,
+        # разрыв страницы - обновление нумерации и переход к первой. Третьей не дано
+        elif '\\' in br or 'Z' in br:
+            if '\\' in br:
+                data['col'] = 'b'
+            else:
+                data['page'] = br_mo.group(1)
+                if 'col' in data:
+                    data['col'] = 'a'
 
-            # Если в рукописи есть колонки, то разрыв колонки обозначает переход ко второй,
-            # разрыв страницы - обновление нумерации и переход к первой. Третьей не дано
-            elif '\\' in br or 'Z' in br:
-                if '\\' in br:
-                    data['col'] = 'b'
-                else:
-                    data['page'] = br_mo.group(1)
-                    if 'col' in data:
-                        data['col'] = 'a'
-
-                data['line'] = 1
-                tokens += ['<pb n="%s"/>' % (data['page'] + data.get('col', ''))]
+            data['line'] = 1
+            tokens += ['<pb n="%s"/><lb n="1"/>' % (data['page'] + data.get('col', ''))]
 
         for token in tokens:
-            otpt.write('      %s\n' % str(token))
+            otpt.write('    %s\n' % str(token))
 
-    otpt.write('    </body>\n  </text>\n</TEI>\n')
+        if r'%' in br:
+            otpt.write('  </ab>\n  <ab>\n')
+
+    otpt.write('  </ab></body></text>\n</TEI>')
     otpt.close()
     os.chdir(root + '\\txt')
     inpt.close()

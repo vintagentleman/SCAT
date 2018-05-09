@@ -5,7 +5,6 @@
    @author sheiden
 
    TXM default CSS 06-2017
-
 */
 
 .txmeditionpage {
@@ -45,7 +44,7 @@
   font-family: times;
 }
 
-.editionpage {
+.editionpageverse {
   font-family: times;
   color: red;
   display: block;
@@ -87,7 +86,7 @@ p {
   text-indent: 0.2cm;
   text-align: justify;
   text-justify: inter-word;  
-  }
+}
 
 img {
   margin: 10px 10px 10px 10px;
