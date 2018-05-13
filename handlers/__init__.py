@@ -49,19 +49,9 @@ class Nom(Gram):
             self.d_old = self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy')
 
         self.case = t.ana[2].split('/')[-1]
-
-        # Маркер pluralia tantum
         self.pt = bool(t.ana[3] == 'pt')
-        if self.pt:
-            self.num = 'мн'
-        else:
-            self.num = t.ana[3].split('/')[-1]
-
-        # Учёт особого смешения (en/i и других)
-        if t.ana[4] == '0':
-            self.gen = 'м'
-        else:
-            self.gen = t.ana[4].split('/')[-1]
+        self.num = t.ana[3].split('/')[-1] if not self.pt else 'мн'
+        self.gen = t.ana[4].split('/')[-1] if t.ana[4] != '0' else 'м'
 
         # Латиница в кириллицу
         self.nb = replace_chars(t.ana[5], 'aeopcyx', 'аеорсух')
@@ -77,11 +67,7 @@ class Pron(Gram):
 
         self.pers = t.ana[2]
         self.case = t.ana[3].split('/')[-1]
-
-        if self.pers != 'возвр':
-            self.num = t.ana[4].split('/')[-1]
-        else:
-            self.num = '_'
+        self.num = t.ana[4].split('/')[-1] if self.pers != 'возвр' else '_'
 
 
 class Verb(Gram):
@@ -160,4 +146,4 @@ class Part(Gram):
         self.tense = t.ana[2]
         self.case = t.ana[3].split('/')[-1]
         self.num = t.ana[4].split('/')[-1]
-        self.gen = t.ana[5].split('/')[-1]
+        self.gen = t.ana[5].split('/')[-1] if t.ana[5] != '0' else 'м'

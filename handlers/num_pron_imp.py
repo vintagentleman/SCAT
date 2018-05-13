@@ -14,9 +14,9 @@ def stem_modif(s):
         return 'ВАШ'
     elif re.match('Н[ЪЬ]?Ш$', s):
         return 'НАШ'
-    elif re.match('(К|ОБ|Т)О$', s):
+    elif re.match('(К|ОБ|М|СВ|Т|ТВ)О$', s):
         return s[:-1]
-    elif s == 'С':
+    elif s in ('С', 'СИ'):
         return 'СЕ'
     elif s == 'Н':
         return ''
