@@ -259,12 +259,12 @@ def process(fn):
 
         # --- Пунктуация слева --- #
         if pc_l:
-            token = '<pc xml:id="%s.%s">%s</pc>' % (fn, xmlid, pc_l)
-            if '[' in pc_l:
-                token = '<add place="margin">' + token
-
+            punct = pc_l.replace('[', '')
+            token = pc_l.replace('[', '<add place="margin"><c type="left">[</c>')
+            if punct:
+                token = token.replace(punct, '<pc xml:id="%s.%s">%s</pc>' % (fn, xmlid, punct))
+                xmlid += 1
             tokens.append(token)
-            xmlid += 1
 
         # --- Словоформа (с разметкой или без) --- #
         if form:
@@ -281,12 +281,12 @@ def process(fn):
 
         # --- Пунктуация справа --- #
         if pc_r:
-            token = '<pc xml:id="%s.%s">%s</pc>' % (fn, xmlid, pc_r)
-            if ']' in pc_r:
-                token += '</add>'
-
+            punct = pc_r.replace(']', '')
+            token = pc_r.replace(']', '<c type="right">]</c></add>')
+            if punct:
+                token = token.replace(punct, '<pc xml:id="%s.%s">%s</pc>' % (fn, xmlid, punct))
+                xmlid += 1
             tokens.append(token)
-            xmlid += 1
 
         # --- Висячие разрывы --- #
         if '&' in br:
