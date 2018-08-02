@@ -15,20 +15,23 @@ def remove_blanks(node):
             remove_blanks(x)
 
 
+def node_text(node):
+    return ''.join(x.data for x in node.childNodes if x.nodeType == Node.TEXT_NODE)
+
+
 def process(fn):
 
     def pack_next(node):
         next_node = node.nextSibling
 
-        if next_node.tagName in ('pc', 'num'):
-            if next_node.tagName == 'pc':
-                next_node.tagName = 'c'
-                node.appendChild(next_node)
-            else:
-                node.appendChild(next_node.firstChild)
-                # Удаление лишних тегов <num> из дерева и списка
-                node.parentNode.removeChild(next_node)
-                num_all.remove(next_node)
+        if next_node.tagName == 'pc' and node_text(next_node) in ('.', ','):
+            next_node.tagName = 'c'
+            node.appendChild(next_node)
+            pack_next(node)
+        elif next_node.tagName == 'num':
+            node.appendChild(next_node.firstChild)
+            node.parentNode.removeChild(next_node)
+            num_all.remove(next_node)
             pack_next(node)
 
     fo = open(fn, mode='r', encoding='utf-8')
@@ -44,8 +47,7 @@ def process(fn):
     for num in num_all:
         # Упаковка <pc> в препозиции
         prev_node = num.previousSibling
-        # TODO Добавить условие на содержимое узла: упаковывать надо только точку и запятую
-        if prev_node.tagName == 'pc':
+        if prev_node.tagName == 'pc' and node_text(prev_node) in ('.', ','):
             # Смена типа узла с маркированного на нейтральный
             prev_node.tagName = 'c'
             num.insertBefore(prev_node, num.firstChild)
