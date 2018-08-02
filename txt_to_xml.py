@@ -83,33 +83,37 @@ class Token(object):
         s = s.strip()
 
         # Упрощение графики и нормализация
-        if hasattr(self, 'ana'):
+        if hasattr(self, 'pos'):
             # Цифирь заменяется арабскими цифрами
-            if not self.ana[0].isnumeric():
+            if not self.pos.isnumeric():
                 # Цифирные прилагательные типа '$ЗПF#ГО' иногда размечаются (непоследовательно)
-                if self.ana[0] == 'числ/п' and '#' in s:
+                if self.pos == 'числ/п' and '#' in s:
                     return s.upper().replace('(', '').replace(')', '')
                 else:
-                    return tools.normalise(s, self.ana[0])
+                    return tools.normalise(s, self.pos)
             else:
-                return self.ana[0]
+                return self.pos
         else:
             return tools.normalise(s, '')
 
     def get_gram(self):
+        # Латиница в кириллицу
+        pos = tools.replace_chars(self.pos, 'aeopcyx', 'аеорсух')
+        if not any(pos.endswith(spec) for spec in ('/в', '/н', '/п', '/ср')):
+            pos = pos.split('/')[-1]
 
-        if self.pos != 'мест':
-            if self.pos == 'сущ':
+        if pos != 'мест':
+            if pos == 'сущ':
                 return noun.main(self)
-            elif self.pos in ('прил', 'прил/ср', 'числ/п'):
+            elif pos in ('прил', 'прил/ср', 'числ/п'):
                 return adj.main(self)
-            elif self.pos == 'числ':
+            elif pos == 'числ':
                 return num_pron_imp.main(self)
-            elif self.pos in ('гл', 'гл/в'):
+            elif pos in ('гл', 'гл/в'):
                 return verb.main(self)
-            elif self.pos in ('прич', 'прич/в'):
+            elif pos in ('прич', 'прич/в'):
                 return part.main(self)
-            elif self.pos in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
+            elif pos in ('прил/н', 'инф', 'инф/в', 'суп', 'нар', 'пред', 'посл', 'союз', 'част', 'межд'):
                 lemma = self.reg.replace('(', '').replace(')', '')
 
                 if lemma.endswith(lib.cons):
@@ -118,7 +122,7 @@ class Token(object):
                     else:
                         lemma += 'Ъ'
 
-                if self.pos == 'пред':
+                if pos == 'пред':
                     if lemma in lib.prep_var:
                         lemma = lemma[:-1] + 'Ъ'
 
@@ -126,11 +130,8 @@ class Token(object):
                         if re.match(regex, lemma):
                             lemma = re.sub(regex, lib.prep_rep[regex], lemma)
 
-                elif self.pos == 'суп':
+                elif pos == 'суп':
                     lemma = lemma[:-1] + 'И'
-
-                elif self.pos.endswith(('/н', '/в')):
-                    self.pos = self.pos[:-2]
 
                 return ('', lemma), ''
 
@@ -138,7 +139,7 @@ class Token(object):
                 return ('', 'NONE'), ''
 
         else:
-            if self.ana[1] == 'личн':
+            if self.msd[0] == 'личн':
                 return pron_pers_refl.main(self)
             else:
                 return num_pron_imp.main(self)
@@ -148,11 +149,9 @@ class Token(object):
         self.xml_id = xml_id
         self.pb = re.search(r'Z (-?\d+) ?', self.src)
 
-        if ana:
-            self.ana = ana
-            self.pos = tools.replace_chars(self.ana[0], 'aeopcyx', 'аеорсух')
-            if not any(self.pos.endswith(spec) for spec in ('/в', '/н', '/п', '/ср')):
-                self.pos = self.pos.split('/')[-1]
+        if ana is not None:
+            self.pos = ana[0]
+            self.msd = ana[1:]
 
         if __name__ == '__main__':
             if '<' in self.src:
@@ -167,7 +166,7 @@ class Token(object):
         else:
             self.reg = self.get_reg(self.src)
 
-        if hasattr(self, 'ana') and self.ana[0] and not self.ana[0].isnumeric():
+        if hasattr(self, 'pos') and self.pos and not self.pos.isnumeric():
             # stem - кортеж из основы до и после модификаций
             self.stem, self.fl = self.get_gram()
             if self.stem[1] or self.fl:
@@ -176,9 +175,11 @@ class Token(object):
     def __repr__(self):
         s = '<w xml:id="%s"' % self.xml_id
 
-        if hasattr(self, 'ana') and not self.ana[0].isnumeric():
-            s += ' ana="%s"' % ';'.join(item for item in self.ana if item)
+        if hasattr(self, 'pos') and not self.pos.isnumeric():
+            s += ' pos="%s"' % self.pos
 
+            if self.msd[0]:
+                s += ' msd="%s"' % ';'.join(item for item in self.msd if item)
             if hasattr(self, 'lemma'):
                 s += ' lemma="%s"' % self.lemma.lower()
 
@@ -186,7 +187,7 @@ class Token(object):
 
         if '*' in self.src:
             s = '<name>' + s + '</name>'
-        elif hasattr(self, 'ana') and self.ana[0].isnumeric():
+        elif hasattr(self, 'pos') and self.pos.isnumeric():
             s = '<num>' + s + '</num>'
 
         if self.corr is not None:

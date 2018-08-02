@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
         for t in process():
             if hasattr(t, 'lemma'):
-                row = [t.xml_id, t.src, t.lemma] + t.ana
+                row = [t.xml_id, t.src, t.lemma, t.pos] + t.msd
                 out_writer.writerow(row)
 
                 if t.lemma == 'NONE':

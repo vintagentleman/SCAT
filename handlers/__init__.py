@@ -10,7 +10,6 @@ class Gram(object):
 
     def __init__(self, t):
         self.form = t.reg.replace('(', '').replace(')', '')
-        # Латиница в кириллицу
         self.pos = t.pos
 
 
@@ -43,18 +42,18 @@ class Nom(Gram):
             self.form += '`'
 
         # Типы склонения: старый для основы, новый для флексии; здесь кириллица в латиницу (для гласных)
-        if '/' in t.ana[1] and t.ana[1] != 'р/скл':
-            self.d_old, self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy').split('/')
+        if '/' in t.msd[0] and t.msd[0] != 'р/скл':
+            self.d_old, self.d_new = replace_chars(t.msd[0], 'аеоу', 'aeoy').split('/')
         else:
-            self.d_old = self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy')
+            self.d_old = self.d_new = replace_chars(t.msd[0], 'аеоу', 'aeoy')
 
-        self.case = t.ana[2].split('/')[-1]
-        self.pt = bool(t.ana[3] == 'pt')
-        self.num = t.ana[3].split('/')[-1] if not self.pt else 'мн'
-        self.gen = t.ana[4].split('/')[-1] if t.ana[4] != '0' else 'м'
+        self.case = t.msd[1].split('/')[-1]
+        self.pt = bool(t.msd[2] == 'pt')
+        self.num = t.msd[2].split('/')[-1] if not self.pt else 'мн'
+        self.gen = t.msd[3].split('/')[-1] if t.msd[3] != '0' else 'м'
 
         # Латиница в кириллицу
-        self.nb = replace_chars(t.ana[5], 'aeopcyx', 'аеорсух')
+        self.nb = replace_chars(t.msd[4], 'aeopcyx', 'аеорсух')
 
 
 class Pron(Gram):
@@ -65,9 +64,9 @@ class Pron(Gram):
         if self.form[-1] not in lib.vows:
             self.form += '`'
 
-        self.pers = t.ana[2]
-        self.case = t.ana[3].split('/')[-1]
-        self.num = t.ana[4].split('/')[-1] if self.pers != 'возвр' else '_'
+        self.pers = t.msd[1]
+        self.case = t.msd[2].split('/')[-1]
+        self.num = t.msd[3].split('/')[-1] if self.pers != 'возвр' else '_'
 
 
 class Verb(Gram):
@@ -84,42 +83,42 @@ class Verb(Gram):
         if self.form[-1] not in lib.vows:
             self.form += '`'
 
-        self.mood = replace_chars(t.ana[1], 'aeopcyx', 'аеорсух')
+        self.mood = replace_chars(t.msd[0], 'aeopcyx', 'аеорсух')
 
         if self.mood == 'изъяв':
-            self.tense = t.ana[2]
+            self.tense = t.msd[1]
 
-            if t.ana[3].isnumeric():
-                self.pers = t.ana[3]
+            if t.msd[2].isnumeric():
+                self.pers = t.msd[2]
                 self.gen = '_'
             else:
                 self.pers = '_'
-                self.gen = t.ana[3]
+                self.gen = t.msd[2]
 
-            self.num = t.ana[4].split('/')[-1]
+            self.num = t.msd[3].split('/')[-1]
 
-            if t.ana[5].isnumeric():
+            if t.msd[4].isnumeric():
                 self.role = '_'
-                self.cls = t.ana[5]
+                self.cls = t.msd[4]
             else:
-                self.role = t.ana[5]
+                self.role = t.msd[4]
                 self.cls = '_'
 
         elif self.mood == 'сосл':
-            if t.ana[2].isnumeric():
-                self.pers = t.ana[2]
+            if t.msd[1].isnumeric():
+                self.pers = t.msd[1]
                 self.gen = '_'
             else:
                 self.pers = '_'
-                self.gen = t.ana[2]
+                self.gen = t.msd[1]
 
-            self.num = t.ana[3].split('/')[-1]
-            self.role = t.ana[4]
+            self.num = t.msd[2].split('/')[-1]
+            self.role = t.msd[3]
 
         elif self.mood == 'повел':
-            self.pers = t.ana[2]
-            self.num = t.ana[3]
-            self.cls = t.ana[4]
+            self.pers = t.msd[1]
+            self.num = t.msd[2]
+            self.cls = t.msd[3]
 
 
 class Part(Gram):
@@ -138,12 +137,12 @@ class Part(Gram):
         if self.form[-1] not in lib.vows:
             self.form += '`'
 
-        if '/' in t.ana[1]:
-            self.d_old, self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy').split('/')
+        if '/' in t.msd[0]:
+            self.d_old, self.d_new = replace_chars(t.msd[0], 'аеоу', 'aeoy').split('/')
         else:
-            self.d_old = self.d_new = replace_chars(t.ana[1], 'аеоу', 'aeoy')
+            self.d_old = self.d_new = replace_chars(t.msd[0], 'аеоу', 'aeoy')
 
-        self.tense = t.ana[2]
-        self.case = t.ana[3].split('/')[-1]
-        self.num = t.ana[4].split('/')[-1]
-        self.gen = t.ana[5].split('/')[-1] if t.ana[5] != '0' else 'м'
+        self.tense = t.msd[1]
+        self.case = t.msd[2].split('/')[-1]
+        self.num = t.msd[3].split('/')[-1]
+        self.gen = t.msd[4].split('/')[-1] if t.msd[4] != '0' else 'м'
