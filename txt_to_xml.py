@@ -6,6 +6,7 @@ import json
 import lib
 import tools
 from handlers import *
+from xml_modif import PostProc
 
 
 class Token(object):
@@ -196,12 +197,22 @@ class Token(object):
         return s
 
 
+def force(pc):
+
+    if set(pc) & {':', ';'}:
+        return 'strong'
+    elif '.' in pc:
+        return 'inter'
+    else:
+        return 'weak'
+
+
 def process(fn):
 
     inpt = open(fn + '.csv', mode='r', encoding='utf-8')
     reader = csv.reader(inpt, delimiter='\t')
     os.chdir(root + '\\xml')
-    otpt = open(fn + '.xml', mode='w', encoding='utf-8')
+    otpt = open(fn + '.xml', mode='w+', encoding='utf-8')
     xmlid = 1
 
     otpt.write('''<?xml version="1.0" encoding="UTF-8"?>
@@ -260,9 +271,9 @@ def process(fn):
         # --- Пунктуация слева --- #
         if pc_l:
             punct = pc_l.replace('[', '')
-            token = pc_l.replace('[', '<add place="margin"><c type="left">[</c>')
+            token = pc_l.replace('[', '<add place="margin"><c>[</c>')
             if punct:
-                token = token.replace(punct, '<pc xml:id="%s.%s">%s</pc>' % (fn, xmlid, punct))
+                token = token.replace(punct, '<pc xml:id="%s.%s" force="%s">%s</pc>' % (fn, xmlid, force(punct), punct))
                 xmlid += 1
             tokens.append(token)
 
@@ -282,9 +293,9 @@ def process(fn):
         # --- Пунктуация справа --- #
         if pc_r:
             punct = pc_r.replace(']', '')
-            token = pc_r.replace(']', '<c type="right">]</c></add>')
+            token = pc_r.replace(']', '<c>]</c></add>')
             if punct:
-                token = token.replace(punct, '<pc xml:id="%s.%s">%s</pc>' % (fn, xmlid, punct))
+                token = token.replace(punct, '<pc xml:id="%s.%s" force="%s">%s</pc>' % (fn, xmlid, force(punct), punct))
                 xmlid += 1
             tokens.append(token)
 
@@ -313,7 +324,15 @@ def process(fn):
             otpt.write('  </ab>\n  <ab>\n')
 
     otpt.write('  </ab></body></text>\n</TEI>')
+
+    # Постобработка
+    otpt.seek(0)
+    xml = PostProc(otpt).run()
     otpt.close()
+
+    with open(fn + '.xml', mode='w', encoding='utf-8') as otpt:
+        otpt.write(xml.toprettyxml(indent='  ', encoding='utf-8').decode())
+
     os.chdir(root + '\\txt')
     inpt.close()
 
