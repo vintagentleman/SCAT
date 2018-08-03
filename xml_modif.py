@@ -18,25 +18,26 @@ class PostProc:
         self.remove_blanks(self.xml)
         self.xml.normalize()
 
+        self.nums = self.xml.getElementsByTagName('num')
+        self.names = self.xml.getElementsByTagName('name')
+
     def modif_num(self):
 
-        def pack_next(node):
+        def pack_num(node):
             next_node = node.nextSibling
 
             if next_node.tagName == 'pc' and next_node.getAttribute('force') != 'strong':
                 next_node.tagName = 'c'
                 next_node.removeAttribute('force')
                 node.appendChild(next_node)
-                pack_next(node)
+                pack_num(node)
             elif next_node.tagName == 'num':
                 node.appendChild(next_node.firstChild)
                 node.parentNode.removeChild(next_node)
-                num_all.remove(next_node)
-                pack_next(node)
+                self.nums.remove(next_node)
+                pack_num(node)
 
-        num_all = self.xml.getElementsByTagName('num')
-
-        for num in num_all:
+        for num in self.nums:
             # Упаковка <pc> в препозиции
             prev_node = num.previousSibling
             if prev_node.tagName == 'pc' and prev_node.getAttribute('force') != 'strong':
@@ -44,12 +45,28 @@ class PostProc:
                 prev_node.removeAttribute('force')
                 num.insertBefore(prev_node, num.firstChild)
             # Последовательная упаковка <pc> и <num> в постпозиции
-            pack_next(num)
+            pack_num(num)
 
             # Суммирование числовых значений
             total = sum([int(node.getAttribute('reg')) for node in num.getElementsByTagName('w')])
             num.setAttribute('value', str(total))
 
+    def modif_name(self):
+
+        def pack_name(node):
+            next_node = node.nextSibling
+
+            if next_node.tagName == 'name':
+                node.appendChild(next_node.firstChild)
+                node.parentNode.removeChild(next_node)
+                self.names.remove(next_node)
+                pack_name(node)
+
+        for name in self.names:
+            pack_name(name)
+
     def run(self):
         self.modif_num()
+        self.modif_name()
+
         return self.xml

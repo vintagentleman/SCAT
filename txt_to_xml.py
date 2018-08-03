@@ -226,7 +226,7 @@ def process(fn):
         otpt.write('''
         <respStmt>
           <resp>%s</resp>
-          <name>%s</name>
+          <persName>%s</persName>
         </respStmt>''' % tuple(pair))
 
     otpt.write('''
