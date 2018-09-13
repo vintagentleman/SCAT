@@ -66,7 +66,7 @@ class Pron(Gram):
 
         self.pers = t.msd[1]
         self.case = t.msd[2].split('/')[-1]
-        self.num = t.msd[3].split('/')[-1] if self.pers != 'возвр' else '_'
+        self.num = t.msd[3].split('/')[-1] if self.pers != 'возвр' else 'ед'
 
 
 class Verb(Gram):
