@@ -47,7 +47,7 @@ def replace_chars(string, fr, to):
     return ''.join(result)
 
 
-def normalise(string, pos):
+def normalise(string, pos=''):
 
     def simplify_graphics(s):
         # Однозначные графические дублеты

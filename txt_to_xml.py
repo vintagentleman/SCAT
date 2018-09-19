@@ -95,7 +95,7 @@ class Token(object):
             else:
                 return self.pos
         else:
-            return tools.normalise(s, '')
+            return tools.normalise(s)
 
     def get_gram(self):
         # Латиница в кириллицу

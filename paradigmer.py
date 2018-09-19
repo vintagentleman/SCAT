@@ -1,26 +1,9 @@
 import os
-import csv
-import glob
 import itertools
 import xlsxwriter
 from collections import defaultdict
-from txt_to_xml import Token
+from lemmatiser import token_gener
 from handlers import Nom, Pron
-
-
-def token_gener():
-    files = glob.glob('*.csv')
-
-    for fn in files:
-        with open(fn, mode='r', encoding='utf-8') as fo:
-            reader = csv.reader(fo, delimiter='\t')
-
-            for i, row in enumerate(reader):
-                yield Token(
-                    row[0].strip(),
-                    '%s.%d' % (fn[:-4], i + 1),
-                    [row[j].strip() for j in range(1, 7)]
-                )
 
 
 if __name__ == '__main__':
@@ -58,12 +41,9 @@ if __name__ == '__main__':
 
             sheet.add_table('B%d:E%d' % (row, row + 7), options={
                 'data': [
-                    [
-                        case,
-                        data.get((case, 'ед')),
-                        data.get((case, 'дв')),
-                        data.get((case, 'мн'))
-                    ] for case in ('им', 'род', 'дат', 'вин', 'тв', 'мест', 'зв')
+                    list(
+                        itertools.chain([case], [data.get((case, num)) for num in ('ед', 'дв', 'мн')])
+                    ) for case in ('им', 'род', 'дат', 'вин', 'тв', 'мест', 'зв')
                 ],
                 'autofilter': False,
                 'style': 'Table Style Medium 15',

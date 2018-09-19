@@ -49,7 +49,10 @@ class Nom(Gram):
 
         self.case = t.msd[1].split('/')[-1]
         self.pt = bool(t.msd[2] == 'pt')
-        self.num = t.msd[2].split('/')[-1] if not self.pt else 'мн'
+        if self.pt:
+            self.num = 'мн'
+        else:
+            self.num = t.msd[2].split('/')[-1] if t.msd[2] != '0' else 'ед'
         self.gen = t.msd[3].split('/')[-1] if t.msd[3] != '0' else 'м'
 
         # Латиница в кириллицу

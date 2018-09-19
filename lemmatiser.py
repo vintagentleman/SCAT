@@ -4,47 +4,36 @@ import glob
 from txt_to_xml import Token
 
 
-def process():
-    # Все файлы с разметкой в папке со входными данными
-    files = glob.glob('*.csv')
+def token_gener(pattern='*.csv'):
+    files = glob.glob(pattern)
 
-    for file in files:
-        f = open(file, mode='r', encoding='utf-8')
+    for fn in files:
+        with open(fn, mode='r', encoding='utf-8') as fo:
+            reader = csv.reader(fo, delimiter='\t')
 
-        for i, line in enumerate(f):
-            # Непечатные символы где-нибудь да проскакивают - надо избавляться
-            items = [item.strip() for item in line.rstrip('\n').split(sep='\t')]
-
-            if len(items) == 7:
-                yield Token(items[0], '%s.%d' % (file[:-4], i + 1), [items[i] for i in range(1, 7)])
-            else:
-                print('Warning: corrupt data in file %s, line %d.' % (file, i + 1))
-                continue
-
-        f.close()
+            for i, row in enumerate(reader):
+                yield Token(
+                    row[0].strip(),
+                    '%s.%d' % (fn[:-4], i + 1),
+                    [row[j].strip() for j in range(1, 7)]
+                )
 
 
 if __name__ == '__main__':
     out = open('output.csv', mode='w', encoding='utf-8', newline='')
     err = open('errors.csv', mode='w', encoding='utf-8', newline='')
+    out_writer = csv.writer(out, delimiter='\t')
+    err_writer = csv.writer(err, delimiter='\t')
 
-    try:
-        os.chdir(os.getcwd() + '\\grm')
-    except FileNotFoundError:
-        print('Error: source data directory missing.')
-    else:
-        print('Please wait. Python is processing your data...')
-        out_writer = csv.writer(out, delimiter='\t')
-        err_writer = csv.writer(err, delimiter='\t')
+    os.chdir(os.getcwd() + '\\grm')
 
-        for t in process():
-            if hasattr(t, 'lemma'):
-                row = [t.xml_id, t.src, t.lemma, t.pos] + t.msd
-                out_writer.writerow(row)
+    for t in token_gener():
+        if hasattr(t, 'lemma'):
+            row = [t.xml_id, t.src, t.lemma, t.pos] + t.msd
+            out_writer.writerow(row)
 
-                if t.lemma == 'NONE':
-                    err_writer.writerow(row)
+            if t.lemma == 'NONE':
+                err_writer.writerow(row)
 
-    finally:
-        err.close()
-        out.close()
+    err.close()
+    out.close()
