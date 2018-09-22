@@ -1,7 +1,6 @@
 import re
 import lib
 import tools
-from handlers import Verb
 
 
 def cls_cons_modif(s):
@@ -137,8 +136,7 @@ def aor_sigm(gr):
     return (s_old, s_new), 'ТИ'
 
 
-def main(token):
-    gr = Verb(token)
+def main(gr):
     stem, fl = ('', ''), ''
 
     if gr.mood == 'изъяв':

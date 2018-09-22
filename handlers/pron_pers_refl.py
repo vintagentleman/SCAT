@@ -1,10 +1,8 @@
 import lib
 import re
-from handlers import Pron
 
 
-def main(token):
-    gr = Pron(token)
+def main(gr):
     stem = 'NONE'
 
     if gr.pers != 'возвр':

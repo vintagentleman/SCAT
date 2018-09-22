@@ -2,8 +2,7 @@ import os
 import itertools
 import xlsxwriter
 from collections import defaultdict
-from lemmatiser import token_gener
-from handlers import Nom, Pron
+import obj
 
 
 if __name__ == '__main__':
@@ -13,12 +12,12 @@ if __name__ == '__main__':
     # --- Заполнение и сортировка базы данных --- #
     db = dict()
 
-    for t in token_gener():
+    for t in obj.token_gener():
         if hasattr(t, 'lemma') and t.pos.startswith(('сущ', 'прил', 'числ', 'мест')):
             if t.lemma not in db:
                 db[t.lemma] = defaultdict(int)
 
-            gr = Pron(t) if t.pos == 'мест' and t.msd[0] == 'личн' else Nom(t)
+            gr = obj.Pron(t) if t.pos == 'мест' and t.msd[0] == 'личн' else obj.Nom(t)
             db[t.lemma][(gr.case, gr.num)] += 1
 
     os.chdir(root)

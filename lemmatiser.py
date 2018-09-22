@@ -1,22 +1,6 @@
 import os
 import csv
-import glob
-from txt_to_xml import Token
-
-
-def token_gener(pattern='*.csv'):
-    files = glob.glob(pattern)
-
-    for fn in files:
-        with open(fn, mode='r', encoding='utf-8') as fo:
-            reader = csv.reader(fo, delimiter='\t')
-
-            for i, row in enumerate(reader):
-                yield Token(
-                    row[0].strip(),
-                    '%s.%d' % (fn[:-4], i + 1),
-                    [row[j].strip() for j in range(1, 7)]
-                )
+from obj import token_gener
 
 
 if __name__ == '__main__':
@@ -29,7 +13,7 @@ if __name__ == '__main__':
 
     for t in token_gener():
         if hasattr(t, 'lemma'):
-            row = [t.xml_id, t.src, t.lemma, t.pos] + t.msd
+            row = [t.xmlid, t.src, t.lemma, t.pos] + t.msd
             out_writer.writerow(row)
 
             if t.lemma == 'NONE':

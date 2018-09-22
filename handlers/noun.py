@@ -1,7 +1,6 @@
 import re
 import lib
 import tools
-from handlers import Nom
 
 
 def reduced(d, case, num, gen):
@@ -176,10 +175,7 @@ def grd_check(s, prop):
     return s, grd
 
 
-def main(token):
-    # Извлечение данных по токену
-    gr = Nom(token)
-
+def main(gr):
     # Проверка на исключительность
     for key in lib.noun_spec:
         if re.match(key, gr.form):

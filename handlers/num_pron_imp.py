@@ -1,7 +1,6 @@
 import tools
 import lib
 import re
-from handlers import Nom
 from handlers.noun import noun_infl
 from handlers.adj import adj_pron_infl
 
@@ -67,8 +66,7 @@ def zhe(i, gr):
     return i
 
 
-def main(token):
-    gr = Nom(token)
+def main(gr):
 
     if gr.pos == 'мест':
         # Проверка на исключительность

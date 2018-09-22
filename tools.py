@@ -35,16 +35,8 @@ def count_chars(string, num=-1):
 
 def replace_chars(string, fr, to):
 
-    if len(fr) != len(to):
-        raise RuntimeError
-
-    result = list(string)
-
-    for i in range(len(result)):
-        if result[i] in fr:
-            result[i] = to[fr.index(result[i])]
-
-    return ''.join(result)
+    repl = dict(zip(fr, to))
+    return ''.join([repl.get(c, c) for c in string])
 
 
 def normalise(string, pos=''):

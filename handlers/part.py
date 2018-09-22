@@ -1,7 +1,7 @@
 import re
 import lib
 import tools
-from handlers import Part, verb
+from handlers import verb
 
 
 def act_past(gr):
@@ -91,8 +91,7 @@ def pas_past(gr):
     return (s_old, s_new), 'ТИ'
 
 
-def main(token):
-    gr = Part(token)
+def main(gr):
 
     if gr.tense == 'прош':
         # Страдательные

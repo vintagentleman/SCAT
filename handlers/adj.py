@@ -1,7 +1,6 @@
 import re
 import lib
 import tools
-from handlers import Nom
 from handlers.noun import noun_infl
 
 
@@ -30,10 +29,7 @@ def adj_pron_infl(s, decl):
             return 'ИИ'
 
 
-def main(token):
-    # Извлечение данных по токену
-    gr = Nom(token)
-
+def main(gr):
     # Стемминг
     if gr.d_old not in ('м', 'тв'):
         s_old = tools.find_stem(gr.form, (gr.d_new, gr.case, gr.num, gr.gen), lib.nom_infl)
