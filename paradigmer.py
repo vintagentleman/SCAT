@@ -12,7 +12,7 @@ if __name__ == '__main__':
     # --- Заполнение и сортировка базы данных --- #
     db = dict()
 
-    for t in obj.token_gener():
+    for t in obj.word_gener():
         if hasattr(t, 'lemma') and t.pos.startswith(('сущ', 'прил', 'числ', 'мест')):
             if t.lemma not in db:
                 db[t.lemma] = defaultdict(int)

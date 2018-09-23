@@ -2,69 +2,58 @@ import os
 import re
 import glob
 import tools
+import obj
 from lib import letter_values
 
 
 def parse_line(line):
     line = tools.replace_chars(line, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
     nums = line[line.rfind('/') + 1:].split()
-    line = line[:line.rfind('/')].split()
+    toks = line[:line.rfind('/')].split()
+    i = 0
 
-    pc = re.compile(r'[.,:;[\]]+')
-    j = 0
+    # Сборка токенов из множества кусков
+    while i < len(toks):
+        # Межстраничные разрывы
+        if toks[i] == 'Z':
+            toks[i] = ' '.join([toks[i], toks[i + 1]])
+            del toks[i + 1]
 
-    while j < len(line):
-        # Собираем токены из множества кусков; начинаем с межстраничных разрывов
-        if line[j] == 'Z':
-            line[j] = '%s %s' % (line[j], line[j + 1])
-            del line[j + 1]
+        # Разрывы *до* ошибок: ср. '~АБВZ -123 ГДЖ <АБВZ -123 ГДЕ>'
+        elif toks[i].endswith('Z'):
+            toks[i] = ' '.join([toks[i], toks[i + 1], toks[i + 2]])
+            del toks[i + 1:i + 3]
 
-        # Разрывы *до* ошибок, ибо бывает такое: '~АБВZ -123 ГДЖ <АБВZ -123 ГДЕ>'
-        elif line[j].endswith('Z'):
-            line[j] = '%s %s %s' % (line[j], line[j + 1], line[j + 2])
-            del line[j + 1:j + 3]
+        # Ошибочные написания
+        if len(toks) > i + 1 and toks[i + 1].startswith('<'):
+            corr = toks[i + 1]
+            del toks[i + 1]
 
-        # Токены из множества кусков: ошибочные написания
-        if len(line) > j + 1 and line[j + 1].startswith('<'):
-            corr = line[j + 1]
-            del line[j + 1]
-
-            # Бывают и неоднословные
+            # Бывают и множественные
             while '>' not in corr:
-                corr += ' ' + line[j + 1]
-                del line[j + 1]
+                corr += ' ' + toks[i + 1]
+                del toks[i + 1]
 
-            line[j] = '%s %s' % (line[j], corr)
+            toks[i] = ' '.join([toks[i], corr])
 
-        # Отклеиваем пунктуацию слева
-        mo = pc.match(line[j])
-        if mo and len(mo.group()) != len(line[j]):
-            line.insert(j, line[j][:mo.end()])
-            j += 1
-            line[j] = line[j][mo.end():]
-        # Теперь справа
-        mo = pc.search(line[j])
-        if mo and len(mo.group()) != len(line[j]):
-            line.insert(j + 1, line[j][mo.start():])
-            line[j] = line[j][:mo.start()]
-            j += 1
+        # Висячая пунктуация справа и мелкие разрывы
+        if len(toks) > i + 1 and re.match(r'[.,:;\]&\\]+', toks[i + 1]):
+            toks[i] += toks[i + 1]
+            del toks[i + 1]
 
-        # Висячие разрывы
-        if line[j].endswith(('&', '\\')) and len(line[j]) > 1:
-            line.insert(j + 1, line[j][-1])
-            line[j] = line[j][:-1]
+        i += 1
 
-        j += 1
-
-    return line, nums
+    return [obj.Token(t) for t in toks], nums
 
 
-def process(wrds, nums):
+def line_gener(toks, nums):
     nums_done = 0
 
-    for word in wrds:
-        if word == '*':
+    for t in toks:
+        if t.word == '*':
             num = nums[nums_done]
+
+            # Не быть титла не может
             if '#' not in num:
                 num += '#'
             titlo = num.index('#')
@@ -74,35 +63,29 @@ def process(wrds, nums):
             else:
                 value = sum(letter_values.get(letter, 0) for letter in num[0:titlo])
 
-            yield ('%s\t%d' + '\t' * 5) % (num, value)
+            yield ('%s\t%d' + '\t' * 5) % (str(t).replace('*', num), value)
             nums_done += 1
 
         else:
-            yield word
-
-
-def get_txt(file):
-
-    inpt = open(file, mode='r', encoding='IBM866')
-    os.chdir(root + '\\txt')
-    otpt = open(file[:-3] + 'csv', mode='w', encoding='utf-8')
-
-    for i in inpt.readlines():
-        i = parse_line(i)
-
-        for token in process(i[0], i[1]):
-            otpt.write('%s\n' % token)
-
-    otpt.close()
-    os.chdir(root + '\\src')
-    inpt.close()
+            yield str(t)
 
 
 if __name__ == '__main__':
     root = os.getcwd()
     os.makedirs(root + '\\txt', exist_ok=True)
     os.chdir(root + '\\src')
-    files = glob.glob('*.txt')
+    names = glob.glob('*.txt')
 
-    for f in files:
-        get_txt(f)
+    for name in names:
+        inpt = open(name, mode='r', encoding='IBM866')
+        os.chdir(root + '\\txt')
+
+        with open(name[:-3] + 'csv', mode='w', encoding='utf-8') as otpt:
+            for l in inpt.readlines():
+                p = parse_line(l)
+
+                for _ in line_gener(p[0], p[1]):
+                    otpt.write('%s\n' % _)
+
+        os.chdir(root + '\\src')
+        inpt.close()

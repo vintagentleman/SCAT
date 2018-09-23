@@ -7,7 +7,10 @@ import tools
 from handlers import *
 
 
-def token_gener(pattern='*.csv'):
+metadata = json.load(open('metadata.json', mode='r', encoding='utf-8'))
+
+
+def word_gener(pattern='*.csv'):
     names = glob.glob(pattern)
 
     for name in names:
@@ -15,11 +18,42 @@ def token_gener(pattern='*.csv'):
             reader = csv.reader(fo, delimiter='\t')
 
             for i, row in enumerate(reader):
-                yield Token(row[0].strip(), name[:-4], i + 1, [row[j].strip() for j in range(1, 7)])
+                yield Word(Token(row[0].strip()).word, name[:-4], i + 1, [row[j].strip() for j in range(1, 7)])
 
 
 class Token:
-    metadata = json.load(open('metadata.json', mode='r', encoding='utf-8'))
+
+    def __init__(self, line):
+        self.word = line
+
+        # Начальные знаки препинания
+        self.pcl = re.search(r'^[.,:;[]+', self.word)
+        if self.pcl is not None:
+            self.word = self.word[self.pcl.end():].strip()
+            self.pcl = self.pcl.group()
+        else:
+            self.pcl = ''
+
+        # Висячие разрывы
+        self.br = re.search(r'[&\\%]$|Z (-?\d+)$', self.word)
+        if self.br is not None:
+            self.word = self.word[:self.br.start()].strip()
+
+        # Конечные знаки препинания
+        self.pcr = re.search(r'[.,:;\]]+$', self.word)
+        if self.pcr is not None:
+            self.word = self.word[:self.pcr.start()].strip()
+            self.pcr = self.pcr.group()
+        else:
+            self.pcr = ''
+
+    def __repr__(self):
+        br = self.br.group() if self.br is not None else ''
+
+        return self.pcl + self.word + self.pcr + br
+
+
+class Word:
 
     @staticmethod
     def ascii_to_unicode(s):
@@ -85,10 +119,7 @@ class Token:
         return self.ascii_to_unicode(s)
 
     def get_reg(self, s):
-        # Знаки препинания и разрывы
-        for sign in '.,:;[]':
-            s = s.replace(sign, '')
-
+        # Разрывы
         s = s.replace(r'%', '').replace('&', '').replace('\\', '')
         s = re.sub(r'Z -?\d+ ?', '', s)
         s = s.strip()
@@ -164,7 +195,7 @@ class Token:
     def __init__(self, src, fn, i, ana=None):
         self.src = tools.replace_chars(src, 'ABEKMHOPCTXЭaeopcyx', 'АВЕКМНОРСТХ+аеорсух')
         self.xmlid = '%s.%d' % (fn, i)
-        self.data = Token.metadata.get(fn)
+        self.data = metadata.get(fn)
         self.pb = re.search(r'Z (-?\d+) ?', self.src)
 
         if ana is not None:

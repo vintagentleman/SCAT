@@ -1,6 +1,6 @@
 import os
 import csv
-from obj import token_gener
+from obj import word_gener
 
 
 if __name__ == '__main__':
@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     os.chdir(os.getcwd() + '\\grm')
 
-    for t in token_gener():
+    for t in word_gener():
         if hasattr(t, 'lemma'):
             row = [t.xmlid, t.src, t.lemma, t.pos] + t.msd
             out_writer.writerow(row)

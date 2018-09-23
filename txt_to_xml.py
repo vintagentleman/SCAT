@@ -1,9 +1,8 @@
 import os
-import re
-import glob
 import csv
+import glob
+import obj
 import xml_modif
-from obj import Token
 
 
 def force(pc):
@@ -51,79 +50,60 @@ def main(fn):
     <pb n="%s"/><lb n="1"/>\n''' % (data['bibl'], (data['page'] + data.get('col', ''))))
 
     for i, row in enumerate(reader):
-        form = row[0].strip()
-        tokens = []
+        t = obj.Token(row[0].strip())
+        out = list()
 
-        # Расчленяем словоформу на четыре блока (всегда обязательно наличествует по крайней мере один):
-        # 1) начальные знаки препинания - это м. б. только '[' (символ начала вставки), 2) сама словоформа,
-        # 3) висячие (конечные) знаки препинания и 4) висячие разрывы. Порядок именно такой: ср. '[МIРЪ.] Z 27'
-        pc_l = br = pc_r = ''
-
-        pc_l_mo = re.search('^[.,:;[]+', form)
-        if pc_l_mo:
-            form, pc_l = form[pc_l_mo.end():].strip(), form[:pc_l_mo.end()].strip()
-
-        br_mo = re.search(r'[%&\\]$|Z (-?\d+)$', form)
-        if br_mo:
-            form, br = form[:br_mo.start()].strip(), form[br_mo.start():].strip()
-
-        pc_r_mo = re.search('[.,:;\]]+$', form)
-        if pc_r_mo:
-            form, pc_r = form[:pc_r_mo.start()].strip(), form[pc_r_mo.start():].strip()
-
-        # --- Пунктуация слева --- #
-        if pc_l:
-            punct = pc_l.replace('[', '')
-            token = pc_l.replace('[', '<add place="margin"><c>[</c>')
+        # Пунктуация слева
+        if t.pcl:
+            punct = t.pcl.replace('[', '')
+            token = t.pcl.replace('[', '<add place="margin"><c>[</c>')
             if punct:
                 token = token.replace(punct, '<pc xml:id="%s.%s" force="%s">%s</pc>' % (fn, xmlid, force(punct), punct))
                 xmlid += 1
-            tokens.append(token)
+            out.append(token)
 
-        # --- Словоформа (с разметкой или без) --- #
-        if form:
+        # Словоформа
+        if t.word:
             if len(row) == 7:
-                token = Token(form, fn, xmlid, [row[i].strip() for i in range(1, 7)])
-            elif len(row) == 1:
-                token = Token(form, fn, xmlid)
+                token = obj.Word(t.word, fn, xmlid, [row[i].strip() for i in range(1, 7)])
             else:
-                print('Warning: corrupt data in file %s, line %d.' % (fn, i + 1))
-                continue
+                token = obj.Word(t.word, fn, xmlid)
 
-            tokens.append(token)
+            out.append(token)
             xmlid += 1
 
-        # --- Пунктуация справа --- #
-        if pc_r:
-            punct = pc_r.replace(']', '')
-            token = pc_r.replace(']', '<c>]</c></add>')
+        # Пунктуация справа
+        if t.pcr:
+            punct = t.pcr.replace(']', '')
+            token = t.pcr.replace(']', '<c>]</c></add>')
             if punct:
                 token = token.replace(punct, '<pc xml:id="%s.%s" force="%s">%s</pc>' % (fn, xmlid, force(punct), punct))
                 xmlid += 1
-            tokens.append(token)
+            out.append(token)
 
-        # --- Висячие разрывы --- #
-        if '&' in br:
-            data['line'] += 1
-            tokens += ['<lb n="%d"/>' % data['line']]
+        # Висячие разрывы
+        if t.br is not None:
+            if '&' in t.br.group():
+                data['line'] += 1
+                out.append('<lb n="%d"/>' % data['line'])
 
-        # Если в рукописи есть колонки, то разрыв колонки обозначает переход ко второй,
-        # разрыв страницы - обновление нумерации и переход к первой. Третьей не дано
-        elif '\\' in br or 'Z' in br:
-            if '\\' in br:
-                data['col'] = 'b'
-            else:
-                data['page'] = br_mo.group(1)
-                if 'col' in data:
-                    data['col'] = 'a'
+            # Если в рукописи есть колонки, то разрыв колонки обозначает переход ко второй,
+            # разрыв страницы - обновление нумерации и переход к первой. Третьей не бывает
+            elif set(t.br.group()) & {'\\', 'Z'}:
+                if '\\' in t.br.group():
+                    data['col'] = 'b'
+                else:
+                    data['page'] = t.br.group(1)
+                    if 'col' in data:
+                        data['col'] = 'a'
 
-            data['line'] = 1
-            tokens += ['<pb n="%s"/><lb n="1"/>' % (data['page'] + data.get('col', ''))]
+                data['line'] = 1
+                out.append('<pb n="%s"/><lb n="1"/>' % (data['page'] + data.get('ol', '')))
 
-        for token in tokens:
-            otpt.write('    %s\n' % str(token))
+        for _ in out:
+            otpt.write('    %s\n' % str(_))
 
-        if r'%' in br:
+        if t.br is not None and r'%' in t.br.group():
             otpt.write('  </ab>\n  <ab>\n')
 
     otpt.write('  </ab></body></text>\n</TEI>')
@@ -144,9 +124,9 @@ if __name__ == '__main__':
     root = os.getcwd()
     os.makedirs(root + '\\xml', exist_ok=True)
     os.chdir(root + '\\txt')
-    names = glob.glob('*.csv')
+    names = glob.glob('CrlNvz.csv')
 
     for name in names:
         f = name[:-4]
-        data = Token.metadata[f]
+        data = obj.metadata[f]
         main(f)
