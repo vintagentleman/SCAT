@@ -32,11 +32,11 @@ if __name__ == '__main__':
     for n, group in itertools.groupby(db_sort, lambda y: len(y[1])):
         # Вкладки именуются по числу заполненных парадигматических позиций
         sheet = book.add_worksheet(str(n))
+        sheet.set_column('A:A', 20)
         row = 1
 
         for lemma, data in group:
             sheet.write('A%d' % row, lemma)
-            sheet.set_column('A:A', 20)
 
             sheet.add_table('B%d:E%d' % (row, row + 7), options={
                 'data': [

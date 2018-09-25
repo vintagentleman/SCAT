@@ -24,7 +24,7 @@ def word_gener(pattern='*.csv'):
 class Token:
 
     def __init__(self, line):
-        self.word = line
+        self.line = self.word = line
 
         # Начальные знаки препинания
         self.pcl = re.search(r'^[.,:;[]+', self.word)
@@ -48,9 +48,7 @@ class Token:
             self.pcr = ''
 
     def __repr__(self):
-        br = self.br.group() if self.br is not None else ''
-
-        return self.pcl + self.word + self.pcr + br
+        return self.line
 
 
 class Word:

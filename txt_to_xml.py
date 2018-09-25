@@ -124,7 +124,7 @@ if __name__ == '__main__':
     root = os.getcwd()
     os.makedirs(root + '\\xml', exist_ok=True)
     os.chdir(root + '\\txt')
-    names = glob.glob('CrlNvz.csv')
+    names = glob.glob('*.csv')
 
     for name in names:
         f = name[:-4]
